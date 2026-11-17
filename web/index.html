@@ -135,6 +135,11 @@
               <option value="full">FULL</option>
             </select>
           </label>
+          <label class="setup-volume" for="sound-volume">VOLUME
+            <input id="sound-volume" type="range" min="0" max="100" step="5" value="100">
+            <output id="sound-volume-display" for="sound-volume">100%</output>
+          </label>
+          <label class="setup-check"><input id="mute-sound" type="checkbox"> MUTE ALL GAME AUDIO</label>
           <button type="button" id="sound-test" class="setup-test-btn">PLAY TEST TONE</button>
         </fieldset>
         <fieldset class="setup-controls">
@@ -143,8 +148,22 @@
           <p>After moving, <kbd>ARROWS + ENTER</kbd> to target and strike, or tap / click a tile.</p>
           <p>On touchscreens, use the direction pad, HOLD, and the attack buttons. <kbd>E</kbd> HEAL · <kbd>F</kbd> FREEZE when equipped · <kbd>R</kbd> NEW LOOP.</p>
         </fieldset>
+        <details id="menu-howto" class="menu-disclosure">
+          <summary>HOW TO PLAY <small>READ · REMEMBER · DECIDE</small></summary>
+          <p>Watch the amber warning cells. They disappear before your decision; the enemy strikes those exact cells after your move and attack. Move one cardinal tile or HOLD, then choose Jab, Sweep or Burst and select a target. Your attacks leave lingering marks.</p>
+          <p>Clear three rooms. After the first two, choose one of three modifiers; each has a benefit and a cost.</p>
+        </details>
+        <details id="menu-content" class="menu-disclosure">
+          <summary>CONTENT NOTICE <small>SYMBOLIC DISTRESS</small></summary>
+          <p>References childhood distress, fear, isolation and memories of abuse through non-graphic environments and sounds. There is no literal depiction of abuse. The three-room ending is a demo, not the complete story.</p>
+        </details>
+        <details id="menu-credits" class="menu-disclosure">
+          <summary>CREDITS <small>PROJECT INFORMATION</small></summary>
+          <p>RE:(do)(start)(call) — an in-development psychological tactical-memory game. Contributors and source history are available in the <a href="https://github.com/arbiesantinocastillo90-hub/RE-do-start-call" target="_blank" rel="noopener noreferrer">project repository</a>.</p>
+        </details>
       </form>
       <div id="modal-choices"></div>
+      <button type="button" id="modal-secondary" class="modal-secondary" hidden>KEEP PLAYING</button>
       <button type="button" id="modal-primary" class="primary-btn">START NEW LOOP <span aria-hidden="true">→</span></button>
       <div class="modal-footer">IT IS OKAY TO START AGAIN.</div>
     </div>
