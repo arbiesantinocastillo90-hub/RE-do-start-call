@@ -10,7 +10,7 @@ static func distance(a: Vector2i, b: Vector2i) -> int:
 
 static func cells_for(attack: String, origin: Vector2i, target: Vector2i) -> Array[Vector2i]:
     var out: Array[Vector2i] = []
-    if not inside(target) or origin == target:
+    if not inside(origin) or not inside(target) or origin == target:
         return out
     var delta := target - origin
     match attack:
@@ -27,7 +27,9 @@ static func cells_for(attack: String, origin: Vector2i, target: Vector2i) -> Arr
         "Burst":
             if distance(origin, target) <= 2:
                 for offset in [Vector2i.ZERO, Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
-                    var cell := target + offset
+                    # The literal array yields Variant offsets under Godot 4.4;
+                    # explicit typing avoids an invalid inferred 'cell' type.
+                    var cell: Vector2i = target + offset
                     if inside(cell):
                         out.append(cell)
     return out
