@@ -110,13 +110,9 @@
     });
   });
   clueTrigger.addEventListener('click', () => {
-    if (pinned || !cluePanel.hidden) {
-      pinned = false;
-      peekDismissed = true;
-    } else {
-      pinned = true;
-      peekDismissed = false;
-    }
+    // First tap pins an already-hovered/focused reveal; second tap closes it.
+    pinned = !pinned;
+    peekDismissed = !pinned;
     syncPeek();
   });
 
