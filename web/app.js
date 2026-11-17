@@ -259,8 +259,11 @@
     document.body.classList.toggle('no-pulse', !settings.pulse);
     document.body.classList.toggle('high-contrast', settings.highContrast);
     document.body.classList.toggle('user-reduced-motion', settings.reduceMotion);
-    $('#avatar-preview').textContent = avatars[settings.avatar];
-    $('#avatar-description').textContent = avatarNames[settings.avatar] + ' · ' + tintNames[settings.tint];
+    $('#avatar-preview-glyph').textContent = avatars[settings.avatar];
+    $('#avatar-preview-glyph').style.color = tints[settings.tint];
+    $('#avatar-preview-copy').textContent = avatarNames[settings.avatar] + ' / ' + tintNames[settings.tint].split(' / ')[0];
+    $('#avatar-preview').setAttribute('aria-label',
+      'Character preview: ' + settings.avatar + ' in ' + tintNames[settings.tint].toLowerCase());
     $('#sound-test').disabled = settings.sound === 'off';
     // Agent E can listen for sound and motion preferences without owning this menu.
     window.dispatchEvent(new CustomEvent('redo:preferenceschange', { detail: { ...settings } }));
