@@ -72,6 +72,11 @@ test('accessible long tells retain identical danger geometry and a 2.5-second mi
   accessible.finishTell();
   accessible.setAccessibility({persistTells: true});
   assert.equal(accessible.tileInfo(p(0,5)).showWarning, true);
+  const base = new Game({timer: () => 0, clearTimer: () => {}, slowTells: true});
+  base.owned = ['hyper']; base.startRoom(2);
+  assert.ok(Math.abs(base.tellDuration - (accessible.tellDuration + 0.45)) < 1e-9);
+  base.owned = ['tunnel']; base.startRoom(2);
+  assert.ok(Math.abs(base.tellDuration - (accessible.tellDuration - 0.18)) < 1e-9);
   assert.deepEqual([...accessible.warningIds].sort(), [...normal.warningIds].sort());
 });
 console.log(`\n${passed} game-engine tests passed.`);
