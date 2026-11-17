@@ -27,7 +27,9 @@ static func cells_for(attack: String, origin: Vector2i, target: Vector2i) -> Arr
         "Burst":
             if distance(origin, target) <= 2:
                 for offset in [Vector2i.ZERO, Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
-                    var cell := target + offset
+                    # The literal array yields Variant offsets under Godot 4.4;
+                    # explicit typing avoids an invalid inferred 'cell' type.
+                    var cell: Vector2i = target + offset
                     if inside(cell):
                         out.append(cell)
     return out
