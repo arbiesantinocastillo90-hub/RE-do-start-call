@@ -149,6 +149,9 @@ func _tile_pressed(cell: Vector2i) -> void:
         _try_attack(cell)
 
 func _try_move(cell: Vector2i) -> void:
+    # Never spend a movement decision outside MOVE, even via direct callbacks.
+    if phase != "MOVE":
+        return
     if not Pattern.inside(cell):
         return
     if skip_move or slowed:
@@ -181,6 +184,8 @@ func _hold() -> void:
 
 func _select_attack(name: String) -> void:
     if phase != "ATTACK" and phase != "MOVE":
+        return
+    if not ["Jab", "Sweep", "Burst"].has(name):
         return
     attack = name
     _refresh()
@@ -784,7 +789,9 @@ func _refresh() -> void:
             if retain_warnings and (phase == "MOVE" or phase == "ATTACK") and warned.has(cell):
                 text += (" !" if text != "" else "!")
             button.text = text
-            button.disabled = phase != "MOVE" and phase != "ATTACK"
+            # Warning tiles remain focusable so keyboard and assistive-tech users can inspect a live tell.
+            # _tile_pressed remains phase-locked: focus/click during TELL never spends a turn.
+            button.disabled = not (phase == "TELL" or phase == "MOVE" or phase == "ATTACK")
             var tile_description := "Tile %s%d" % ["ABCDEF".substr(x, 1), y + 1]
             if cell == player:
                 tile_description += ": you"
@@ -792,7 +799,11 @@ func _refresh() -> void:
                 tile_description += ": " + str(room["enemy"])
             else:
                 tile_description += ": empty"
-            # Keep tooltip text neutral. Tactical hints belong behind MEMORY TRACE.
+            # Active, visible danger must be non-color-only; hidden memory stays concealed.
+            if warned.has(cell) and phase == "TELL" and tell_visible:
+                tile_description += "; warning: imminent enemy strike"
+            elif warned.has(cell) and retain_warnings and (phase == "MOVE" or phase == "ATTACK"):
+                tile_description += "; retained warning: next enemy strike"
             button.tooltip_text = tile_description
             var ink := Color("#101827") if cell == player or paint == Color("#e8a45d") else Color("#f8f8ff")
             button.add_theme_color_override("font_color", ink)
@@ -843,37 +854,98 @@ func _refresh() -> void:
         history_text += str(line) + "\n"
     log_label.text = "MEMORY LOG\n" + history_text
 
-func _unhandled_key_input(event: InputEvent) -> void:
-    if not (event is InputEventKey) or not event.pressed or event.echo:
+func _input(event: InputEvent) -> void:
+    # Focused GUI Buttons can consume keys before _unhandled_key_input.
+    # Capture gameplay keys first; leave other keys to normal GUI navigation.
+    var key := event as InputEventKey
+    if key == null or not key.pressed or key.echo:
         return
-    if setup_overlay.visible:
+    if key.ctrl_pressed or key.alt_pressed or key.meta_pressed:
         return
-    match event.keycode:
+    # Agent C setup has exclusive input ownership until PLAY.
+    if phase == "SETUP":
+        return
+    # Preserve Space activation for focused HUD controls (including settings).
+    # Enter remains the explicit attack-aim key during ATTACK.
+    var focused := get_viewport().gui_get_focus_owner()
+    if focused is LineEdit or focused is TextEdit:
+        return
+    if key.keycode == KEY_SPACE and focused is BaseButton and not tiles.has(focused):
+        return
+
+    var handled := true
+    match key.keycode:
         KEY_R:
-            _open_setup()
+            # C's native setup flow opens the menu; old builds restart directly.
+            if has_method("_open_setup"):
+                call("_open_setup")
+            else:
+                _start_run()
         KEY_SPACE:
-            _hold()
+            if phase == "MOVE":
+                _hold()
+            else:
+                handled = false
         KEY_1:
-            _select_attack("Jab")
+            if phase == "MOVE" or phase == "ATTACK":
+                _select_attack("Jab")
+            else:
+                handled = false
         KEY_2:
-            _select_attack("Sweep")
+            if phase == "MOVE" or phase == "ATTACK":
+                _select_attack("Sweep")
+            else:
+                handled = false
         KEY_3:
-            _select_attack("Burst")
+            if phase == "MOVE" or phase == "ATTACK":
+                _select_attack("Burst")
+            else:
+                handled = false
         KEY_E:
-            _comfort_heal()
+            if phase == "ATTACK":
+                _comfort_heal()
+            else:
+                handled = false
         KEY_F:
-            _use_freeze()
+            if phase == "MOVE" or phase == "ATTACK":
+                _use_freeze()
+            else:
+                handled = false
         KEY_UP:
-            if phase == "MOVE": _try_move(player + Vector2i.UP)
-            elif phase == "ATTACK": _aim(Vector2i.UP)
+            if phase == "MOVE":
+                _try_move(player + Vector2i.UP)
+            elif phase == "ATTACK":
+                _aim(Vector2i.UP)
+            else:
+                handled = false
         KEY_DOWN:
-            if phase == "MOVE": _try_move(player + Vector2i.DOWN)
-            elif phase == "ATTACK": _aim(Vector2i.DOWN)
+            if phase == "MOVE":
+                _try_move(player + Vector2i.DOWN)
+            elif phase == "ATTACK":
+                _aim(Vector2i.DOWN)
+            else:
+                handled = false
         KEY_LEFT:
-            if phase == "MOVE": _try_move(player + Vector2i.LEFT)
-            elif phase == "ATTACK": _aim(Vector2i.LEFT)
+            if phase == "MOVE":
+                _try_move(player + Vector2i.LEFT)
+            elif phase == "ATTACK":
+                _aim(Vector2i.LEFT)
+            else:
+                handled = false
         KEY_RIGHT:
-            if phase == "MOVE": _try_move(player + Vector2i.RIGHT)
-            elif phase == "ATTACK": _aim(Vector2i.RIGHT)
+            if phase == "MOVE":
+                _try_move(player + Vector2i.RIGHT)
+            elif phase == "ATTACK":
+                _aim(Vector2i.RIGHT)
+            else:
+                handled = false
         KEY_ENTER, KEY_KP_ENTER:
-            if phase == "ATTACK": _try_attack(aim)
+            if phase == "ATTACK":
+                _try_attack(aim)
+            else:
+                handled = false
+        _:
+            handled = false
+
+    if handled:
+        get_viewport().set_input_as_handled()
