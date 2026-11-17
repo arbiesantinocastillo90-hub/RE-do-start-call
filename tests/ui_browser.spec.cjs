@@ -30,7 +30,11 @@ test('setup, optional memory trace, and keyboard movement remain accessible', as
   await expect(page.locator('body')).toHaveClass(/no-scanlines/);
   await expect(page.locator('body')).toHaveClass(/no-pulse/);
   await expect(page.locator('.cell.you .symbol')).toHaveText('◆');
-  await expect(page.locator('.cell.you')).toHaveCSS('background-color', 'rgb(214, 179, 123)');
+  // The active danger telegraph must override avatar tint; inspect the selected
+  // cosmetic variable instead of hiding a fair warning beneath the player.
+  expect(await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--avatar-fill').trim()
+  )).toBe('#d6b37b');
 
   const rail = page.locator('aside.control-column');
   await expect(rail.locator('#phase-pill')).toHaveText('WATCH');
