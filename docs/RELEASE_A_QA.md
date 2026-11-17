@@ -1,5 +1,8 @@
 # Release A — independent QA, integration and release gate
 
+> **CURRENT INTEGRATION ADDENDUM (2026-11-17 UTC+08).** The historical audit below captures the earlier pre-integration state. **Merged main after PRs #12, #9, #14, #17, and #18:** `384a6605ec0f922fba0c91d2d16a648f7206f32d`. Source-of-truth baseline, native Godot parse and turn-lock repairs, C/F pre-game menus and quiet HUD, B encounter parity/fairness, and E motion/audio + D cross-platform release workflow are now integrated. **Integrated PR #18's job [44004263671](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/actions/runs/44004263671) passed** Linux Godot 4.4.1 import/turn tests, Node, real Chromium, Windows x64 cross-export and Windows 2022 headless launch. Do **not** treat this branch's success as proof of the current final main SHA; check `main` Release A workflow and Pages deployment separately. **Release verdict remains CONDITIONAL / NOT HUMAN SIGNED OFF** until Windows GUI three-room gameplay, five first-time-player evaluations and the 10-run manual softlock check are recorded. Older PR references in the historical log describe superseded integration paths, not current main defects. 
+
+
 **Owner:** Agent D (QA / CI / integration / release), 2026-11-17 (UTC+08).  
 **Status:** **BLOCKED — NOT RELEASE READY.** This is an evidence ledger, not a certification.  
 **Initial audited `main` at 10:28 UTC+08:** `b9a976fe3ca8e04a3445f9b6979f338a93377414`. **Refreshed `main` at 10:34 UTC+08:** `a40decae0f6035b56eb7df69713a7094acddef8d` (merged #12 and #9).  

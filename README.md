@@ -1,113 +1,89 @@
 # RE:(do)(start)(call)
 
-> **A 6×6 turn-based psychological roguelike about memory, hypervigilance, and learning to reach out.**
+**A 6×6, turn-based tactical-memory roguelike.** A child navigates a fractured house built from memories. Brief, exact danger-tile warnings disappear before decisions; the player moves to safety, attacks in shapes, and adapts to lingering hazards. Time is not literally stopped: the turn rhythm represents hypervigilance.
 
-**Current delivery:** three-room **house demo, implemented in Godot 4 and as a playable browser companion**, with deterministic game-engine tests. The official repository is **[arbiesantinocastillo90-hub/RE-do-start-call](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call)**. The game title retains its distinctive punctuation; GitHub uses a compatible repository slug.
+> **Release A status: AUTOMATED RELEASE CANDIDATE, not a fully verified consumer release.** Code for the three-room house demo, its Godot 4 project and a playable browser companion is on `main`. Automated tests verify core mechanics, real Chromium keyboard/touch/accessibility scenarios, Godot 4.4.1 headless startup and a Windows executable headless launch. **Human Windows GUI gameplay, ten complete native manual runs, and five novice playtesters are not yet documented.** Do not claim those gates have passed.
 
-## Play it now
+## Play in a browser
 
-### Instant browser demo — no Godot required
+**[PLAY THE THREE-ROOM DEMO](https://arbiesantinocastillo90-hub.github.io/RE-do-start-call/)** (GitHub Pages; no account or installation needed).
 
-Open **`web/index.html`** in a modern browser after extracting this archive. No installation, network access, or third-party libraries are required.
+For offline browser use, download this repository as ZIP, extract it and open `web/index.html`. On the first screen, customize your signal/avatar, choose warning visibility, motion, contrast, optional sound and volume, then choose **START NEW LOOP**. Cosmetic and accessibility preferences can persist locally; health/level progress does not. Your browser may limit sound or local storage.
 
-Select **OPEN YOUR EYES**. Memorize the briefly flashed attack squares. When the tell disappears, move once and then attack. After clearing a room choose one of three offered coping modifiers. Survive all three rooms to win the demo.
+## Play the native Godot game
 
-### Godot 4 project
+1. Install **Godot 4.4.1+**. Clone/download this repository.
+2. In Godot select **Import → project.godot**, open the project and press **F5**.
+3. A setup screen appears first. Choose visual signal and accessibility settings and start a run.
+4. Observe the enemy warning before deciding. After it disappears, move one square (or hold), select an attack and commit a target.
+5. Beat three encounters to see the non-canonical **DEMO COMPLETE** screen. Restart resets the three-room run.
 
-1. Open Godot 4.x → Import → `project.godot`.
-2. Run the project (F5) or `scenes/main.tscn` (F6).
-3. Arrow keys / clicking adjacent squares to move; Space to hold; 1/2/3 select Jab/Sweep/Burst; click an attack target; E/F trigger ability when unlocked; R restarts.
-4. **Godot editor import/runtime testing is still required.** The Godot binary was not available here, and the authoring environment could not run it.
+### Windows x64 test build
 
-## Pitch
+The CI workflow [Release A automated acceptance](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/actions/workflows/release-a.yml) cross-exports the native `.exe` with Godot 4.4.1 export templates and uploads `release-a-windows-x64-cross-export` as a **workflow artifact**; a Windows 2022 job checks its PE format and launches the executable headlessly. Open a successful workflow run, choose **Artifacts → release-a-windows-x64-cross-export**, download ZIP, extract and keep `RE-do-start-call.exe` and `RE-do-start-call.pck` in the same directory. No installation is required.
 
-A boy runs away from home in a burst of emotion. When he opens his eyes, a fractured dimension has rebuilt places from his memory. The turn-by-turn world is not literal time stop; it dramatizes hypervigilance: learned attention to danger. Enemies have fixed attack sequences; warning squares flash briefly before the child's movement decision, and the player must recall them. Attacks poison future tile choices, and powerful upgrades always involve a tradeoff. `(call)` foreshadows that the full game's hopeful conclusion is about accepting help — not destroying another person.
+**Verification boundary:** the [integrated release-candidate PR's workflow](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/actions/runs/44004263671) passed Linux native, Node, Chromium, Windows cross-export and Windows headless launch. That is **not** a verified full Windows graphics, input, audio or three-room GUI playthrough. See [current QA gate](docs/RELEASE_A_QA.md) for exact evidence and remaining tasks.
 
-**Content note:** The story references childhood distress, abuse, and isolation. Its environments portray distress through symbolism, not graphic scenes. No abuser appears as a literal boss.
+## Controls and tactics
 
-## Delivered demo mechanics
-
-| System | Implementation |
+| Input | Action |
 |---|---|
-| Board and turns | 6×6, cardinal move or hold, then attack, then enemy strike |
-| Attack shapes | Jab (single), Sweep (three-tile line), Burst (plus) |
-| Memory tells | Fixed, learnable attacks: show tiles → hide → player acts → same tiles strike |
-| Persistent tile effects | Player splinter/spark/burn traces and enemy rust/drip/echo |
-| Room 1 | Rusted Pipe, horizontal/vertical attacks |
-| Room 2 | Melted Hanger, diagonal attacks and slowdown |
-| Room 3 | Unanswered Call miniboss, crosses/diagonals/rings |
-| Modifier rewards | Choose one of 3 random options after rooms 1 and 2, from 8 mechanisms |
-| Life cycle | Room transitions, HP, death/restart, demonstration win screen |
-| Browser accessibility | Longer warnings, optionally retaining threat outlines |
+| Arrow keys / clicking or tapping an adjacent tile | Move one legal orthogonal square during MOVE |
+| Space or HOLD | Hold position instead of moving |
+| 1 / 2 / 3 | Choose **Jab / Sweep / Burst** |
+| Arrow keys + Enter / click or tap a target | Aim and commit one legal attack during ATTACK |
+| E / F, when unlocked | Comfort Object heal / Freeze defense |
+| Setup / New Loop | Return to pre-game options, with restart safeguards |
+| Focus, hover or tap MEMORY TRACE | Show optional gameplay aids and event memory |
 
-The **browser build** includes a responsive UI, hover attack previews, accessible tile labels, a warning phase display, combat log, modifier-choice overlays, and keyboard controls. The **Godot build** includes a simple generated flat-shape UI and scrollable rewards panel.
+**Turn:** ENEMY TELL → HIDE → MOVE/HOLD → ATTACK/ABILITY → STATUS TICK → SAME WARNED ENEMY STRIKE → NEXT TELL. Warnings and resolved strike coordinates must match exactly. Attack previews show their real footprints. Reduced motion does not change combat rules.
 
-## Run the tests
+**Three rooms:** The Hallway (**Rusted Pipe**, row/column strikes and rust damage), The Window Room (**Melted Hanger**, diagonal strikes and slowing drips), The Room That Rings (**Unanswered Call**, crosses/diagonals/rings and echo hazards). The current implemented boss is **Unanswered Call**; a Light Bulb is presentation brainstorming, not yet this coded release.
 
-Requires Node.js (for tests only):
+**Eight coping mechanisms:** Hypervigilance, Numb, Comfort Object, Fight Response, Freeze, Bracing, Tunnel Vision and Flinch. Choose one of three distinct options after rooms 1 and 2. Every modifier has a boon and a drawback. The modifier choices can differ between runs.
+
+## What is in the code
+
+- Godot: `project.godot`, `scenes/main.tscn`, `scripts/*.gd`, `export_presets.cfg`.
+- Browser companion: `web/engine.js` deterministic combat rules, `web/app.js` UI, `web/effects.js` and `web/effects.css` bounded motion/sound feedback, `web/preferences.js` opt-in/persisted settings, `web/index.html` entry.
+- Tests: `tests/engine.test.js`, `tests/autoplay.test.js`, `tests/encounter_fairness.test.js`, `tests/encounter_patterns.json`, browser UI and effects Playwright tests, native geometry and turn-flow GDScript tests, CI definitions under `.github/workflows/`.
+- Docs: [Locked baseline](docs/PRODUCT_BASELINE_V1.md), [Master build instructions](docs/MASTER_BUILD_PROMPT.md), [demo contract](docs/DEMO_SPEC.md), [code mechanics](docs/GAMEPLAY_IMPLEMENTATION.md), [QA evidence](docs/RELEASE_A_QA.md), [full-game roadmap](docs/FULL_GAME_ROADMAP.md).
+
+### Reproduce the automated checks
 
 ```bash
 node --check web/engine.js
 node --check web/app.js
+node --check web/preferences.js
+node --check web/effects.js
 node tests/engine.test.js
 node tests/autoplay.test.js
-```
-
-The browser game engine has **13 unit tests** and a **60-seed complete-run autoplay plus exhaustive baseline attack safety** test. Those tests were executed successfully at creation. Browser UI screenshot validation and Godot runtime validation were blocked by the environment, so neither is claimed as completed.
-
-For Godot, after installing version 4:
-
-```bash
+node tests/encounter_fairness.test.js
+node tests/preferences.test.js
+node tests/effects.test.js
+node tests/ui_contract.test.js
+# With @playwright/test@1.56.1 and installed Chromium:
+npx playwright test tests/release_browser.spec.cjs tests/ui_browser.spec.cjs tests/setup_browser.spec.cjs tests/effects_browser.spec.cjs --workers=1
+# With Godot 4.4.1+:
 godot --headless --path . --editor --quit
 godot --headless --path . --script res://tests/test_geometry.gd
+godot --headless --path . --script res://tests/test_turn_flow.gd
 ```
 
-## Files
+CI runs these in clean GitHub-hosted environments; manually verify frame pacing, graphics readability, game feel and first-time-player understanding on your actual school PCs.
 
-```text
-RE-do-start-call/
-├── project.godot
-├── scenes/main.tscn
-├── scripts/
-│   ├── main.gd                 Godot UI and battle loop
-│   ├── attack_patterns.gd      Attack geometry
-│   ├── encounter_data.gd       Three rooms / deterministic threats
-│   └── modifiers.gd            Eight boon-with-cost options
-├── web/
-│   ├── index.html              Play locally
-│   ├── style.css               Flat/glitch visual system
-│   ├── engine.js               Pure, testable game state machine
-│   └── app.js                  Browser UI
-├── tests/
-│   ├── engine.test.js          13 JS unit tests
-│   ├── autoplay.test.js        60 full-run reachability tests
-│   └── test_geometry.gd        Godot geometry assertions
-├── docs/
-│   ├── GAMEPLAY_IMPLEMENTATION.md
-│   ├── DEMO_SPEC.md
-│   ├── GPT_INTERFACES.md
-│   ├── FULL_GAME_ROADMAP.md
-│   ├── ORCHESTRATION.md
-│   └── QA_CHECKLIST.md
-└── .github/workflows/tests.yml
-```
+## Content and narrative scope
 
-## What is not in the current demo
+The story alludes to childhood distress and abuse through symbols, warped household objects and architecture rather than graphic reenactment. There is no literal abuser boss. This demo's win is **not** the full canonical ending; the hopeful `(call)` route depends on later accepting safe help and sustained support.
 
-The full game’s void hub, branching room map, school, snow park, up-to-five worlds, ice-cream shop, rewind, permanent memory skills and canonical endings are **designed but not playable** in this demo. See [full game roadmap](docs/FULL_GAME_ROADMAP.md). The house demo ends on a non-canonical completion message.
+The void hub, school, snow park, paths, ice-cream shop, limited-cost rewind, meta-progression and alternate endings remain **future full-game scope**, gated on Release A quality.
 
-## GPT development interfaces
+## Reference UI screenshot
 
-Four independent GPT chat interfaces were created inside the user-shared Canvas Live workspace and given implementation assignments. They are separate GPT conversations, **not guaranteed autonomous filesystem/GitHub agents**. The source directory here is the tested integration artifact; a chat response isn't automatically merged code. See [GPT_INTERFACES.md](docs/GPT_INTERFACES.md).
+![Annotated design feedback](assets/screenshots/ui-feedback-2026-11-17.png)
 
-## GitHub
+The red callouts requested optional hover/focus/tap hints and a quiet HUD with character/settings controls before combat. The source and UX tests implement this direction.
 
-The remote repo name is **`RE-do-start-call`**. The GitHub connector on this account did not expose repository creation, and the browser requested GitHub sign-in, so no remote repository can be honestly claimed yet. You can upload the extracted contents to a new repo; the GitHub Actions workflow will verify the JS game engine after upload.
+## Development orchestration
 
-## UI refinement screenshot (November 17, 2026)
-
-The screenshot below was supplied as design feedback. The red annotations request that in-game hint text and recent-event descriptions become visible on **hover or keyboard focus**, while the status panel shows only essential live information. Put character customization, effects and accessibility settings in the pre-game menu rather than the active combat panel.
-
-![User-provided annotated gameplay UI feedback](assets/screenshots/ui-feedback-2026-11-17.png)
-
-See the associated [UI refinement issue](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/issues) for tracking.
+Six task-specific GPT chat interfaces are linked in the shared Canvas Live workspace (A native/core, B encounter/parity, C HUD/story, D independent QA/release, E animation/sound, F menu/preferences). GitHub PRs and source commits are the integration contract. These chats are **not guaranteed autonomous background processes**. An actual change is complete only after committed code and documented test evidence.
