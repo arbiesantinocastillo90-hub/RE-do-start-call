@@ -26,6 +26,7 @@ test('setup, optional memory trace, and keyboard movement remain accessible', as
   await page.locator('#persist-tells').check();
   await page.locator('#effect-scanlines').uncheck();
   await page.locator('#effect-pulse').uncheck();
+  await expect(page.locator('#modal-primary')).toBeInViewport({ ratio: 1 });
   await page.locator('#modal-primary').click();
   await expect(modal).toBeHidden();
   await expect(page.locator('.cell')).toHaveCount(36);
