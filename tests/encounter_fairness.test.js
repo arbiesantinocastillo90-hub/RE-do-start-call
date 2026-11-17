@@ -210,7 +210,7 @@ for (const owned of loadouts) for (let r = 0; r < 3; r++) for (let t = 0; t < 4;
       : 0;
     assert.equal(s.hp, initialHp - groundHit - directHit,
       'floor/direct mismatch for ' + owned.join('+') + ' r' + r + '/t' + t + '/' + id(here));
-    if (flinches) assert.ok(!s.warningIds.has(id(s.player)),
+    if (flinches) assert.ok(!warning.has(id(s.player)),
       'Flinch must escape to an unwarned tile');
     assert.equal(s.phase, 'TELL', 'modifier/hazard combination deadlocked');
     buildCases++;
