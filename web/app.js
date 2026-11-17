@@ -306,7 +306,12 @@
     game = new Game({
       onUpdate: render,
       slowTells: settings.slowTells,
-      persistTells: settings.persistTells
+      persistTells: settings.persistTells,
+      // Window timer methods require a Window receiver in browsers. The
+      // engine stores injected timers as instance fields; arrow adapters avoid
+      // an "Illegal invocation" at first telegraph without changing timing.
+      timer: (callback, milliseconds) => window.setTimeout(callback, milliseconds),
+      clearTimer: handle => window.clearTimeout(handle)
     });
     render(game);
   }
