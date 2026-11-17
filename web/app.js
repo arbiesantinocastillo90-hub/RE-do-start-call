@@ -347,6 +347,20 @@
     if (event.key.toLowerCase() === 'r') showSetup();
   });
 
+  function updateAvatarPreview() {
+    const shape = $('input[name="avatar-shape"]:checked')?.value || 'circle';
+    const tint = $('#avatar-tint').value;
+    const tintNames = { teal: 'MOSS', amber: 'LAMP', lilac: 'DUSK' };
+    $('#avatar-preview-glyph').textContent = avatars[shape];
+    $('#avatar-preview-glyph').style.color = tints[tint] || tints.teal;
+    $('#avatar-preview-copy').textContent = shape.toUpperCase() + ' / ' + (tintNames[tint] || 'MOSS');
+    $('#avatar-preview').setAttribute('aria-label', 'Character preview: ' + shape + ' in ' + (tintNames[tint] || 'MOSS').toLowerCase());
+  }
+  for (const input of document.querySelectorAll('input[name="avatar-shape"]')) {
+    input.addEventListener('change', updateAvatarPreview);
+  }
+  $('#avatar-tint').addEventListener('change', updateAvatarPreview);
+  updateAvatarPreview();
   showSetup();
   window.__redo = { get game() { return game; }, begin, showSetup }; // Test-only inspector.
 })();
