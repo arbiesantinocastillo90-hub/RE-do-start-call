@@ -61,4 +61,17 @@ test('Numb ignores harmful floor damage', () => {
   const s=game();s.owned=['numb'];s.addStatus(s.player,'rust','enemy',2,2);
   const before=s.hp;s.tickGround();assert.equal(s.hp,before);
 });
+test('accessible long tells retain identical danger geometry and a 2.5-second minimum', () => {
+  const normal = game();
+  const accessible = new Game({timer: () => 0, clearTimer: () => {}, rng: () => 0.5, slowTells: true});
+  for (let room = 0; room < 3; room++) {
+    normal.startRoom(room); accessible.startRoom(room);
+    assert.ok(accessible.tellDuration >= 2.5);
+    assert.deepEqual([...accessible.warningIds].sort(), [...normal.warningIds].sort());
+  }
+  accessible.finishTell();
+  accessible.setAccessibility({persistTells: true});
+  assert.equal(accessible.tileInfo(p(0,5)).showWarning, true);
+  assert.deepEqual([...accessible.warningIds].sort(), [...normal.warningIds].sort());
+});
 console.log(`\n${passed} game-engine tests passed.`);
