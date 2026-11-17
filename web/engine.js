@@ -80,7 +80,9 @@
   }
 
   class Game {
-    constructor({ onUpdate = () => {}, rng = Math.random, timer = setTimeout, clearTimer = clearTimeout, slowTells = false, persistTells = false } = {}) {
+    // Bind default browser timers through closures; calling detached window.setTimeout
+    // as this.timer(...) raises "Illegal invocation" in Chromium.
+    constructor({ onUpdate = () => {}, rng = Math.random, timer = (fn, ms) => setTimeout(fn, ms), clearTimer = handle => clearTimeout(handle), slowTells = false, persistTells = false } = {}) {
       this.onUpdate = onUpdate;
       this.rng = rng;
       this.timer = timer;
