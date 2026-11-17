@@ -1,0 +1,195 @@
+name: Release A automated acceptance (not manual sign-off)
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-a-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser-engine:
+    name: Node rules and deterministic runs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse browser scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check web/engine.js
+          node --check web/app.js
+          if [ -f web/preferences.js ]; then node --check web/preferences.js; fi
+      - name: Deterministic baseline and integrated UI unit tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tests/engine.test.js
+          node tests/autoplay.test.js
+          for spec in tests/ui_contract.test.js tests/preferences.test.js; do
+            if [ -f "$spec" ]; then node "$spec"; fi
+          done
+
+  native-godot:
+    name: Official Godot 4.4.1 import, parse and turn tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install hash-verified official 4.4.1 Linux editor
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 --output /tmp/godot.zip             https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip
+          echo "d6e382fb531019f85630c1f485a561a0d20c4a2344b6c3847735cfee7da812aa  /tmp/godot.zip" | sha256sum --check
+          unzip -q /tmp/godot.zip -d /tmp
+          sudo install -m 755 /tmp/Godot_v4.4.1-stable_linux.x86_64 /usr/local/bin/godot
+          godot --version
+      - name: Bounded editor import (zero script errors required)
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 90s godot --headless --path . --editor --quit 2>&1 | tee /tmp/godot-import.log
+          if grep -Eiq '(SCRIPT ERROR|Parse Error|Failed to load script|ERROR:.*Parse)' /tmp/godot-import.log; then
+            echo "::error::Editor reported script/import errors even if process exited zero"
+            exit 1
+          fi
+      - name: Strict native parsing
+        shell: bash
+        run: |
+          set -euo pipefail
+          for script in scripts/attack_patterns.gd scripts/encounter_data.gd scripts/modifiers.gd scripts/main.gd tests/test_geometry.gd; do
+            timeout 35s godot --headless --path . --check-only --script "res://$script"
+          done
+          if [ ! -f tests/test_turn_flow.gd ]; then
+            echo "::error::Native turn-flow regression suite absent from integrated branch (PR #9 not integrated)"
+            exit 1
+          fi
+          timeout 35s godot --headless --path . --check-only --script res://tests/test_turn_flow.gd
+      - name: Geometry, telegraphs, input locks, restart and rewards
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 45s godot --headless --path . --script res://tests/test_geometry.gd
+          timeout 45s godot --headless --path . --script res://tests/test_turn_flow.gd
+
+  browser-chromium:
+    name: Chromium keyboard, touch, 360px and reduced motion
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Playwright runner and real Chromium
+        run: |
+          npm install --no-save --no-package-lock @playwright/test@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Run independent Release A and integrated UI browser tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          specs=(tests/release_browser.spec.cjs)
+          for f in tests/ui_browser.spec.cjs tests/setup_browser.spec.cjs; do
+            if [ -f "$f" ]; then specs+=("$f"); fi
+          done
+          npx playwright test "${specs[@]}" --workers=1 --reporter=line
+      - name: Upload Playwright errors, screenshots and traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-a-browser-qa
+          path: |
+            test-results/
+            playwright-report/
+            release-qa-*.png
+            quiet-ui-*.png
+            release-setup-*.png
+          if-no-files-found: warn
+
+  windows-export:
+    name: Cross-export Windows x86-64 (not a manual playthrough)
+    needs: [browser-engine, native-godot, browser-chromium]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install official Godot 4.4.1 editor
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 -o /tmp/godot.zip             https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip
+          echo "d6e382fb531019f85630c1f485a561a0d20c4a2344b6c3847735cfee7da812aa  /tmp/godot.zip" | sha256sum --check
+          unzip -q /tmp/godot.zip -d /tmp
+          sudo install -m 755 /tmp/Godot_v4.4.1-stable_linux.x86_64 /usr/local/bin/godot
+      - name: Install official 4.4.1 export templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 -o /tmp/templates.tpz             https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz
+          sha256sum /tmp/templates.tpz
+          mkdir -p /tmp/export-archive "$HOME/.local/share/godot/export_templates/4.4.1.stable"
+          unzip -q /tmp/templates.tpz -d /tmp/export-archive
+          test -f /tmp/export-archive/templates/windows_release_x86_64.exe
+          cp -a /tmp/export-archive/templates/. "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
+      - name: Import and produce the Windows package
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f export_presets.cfg
+          timeout 90s godot --headless --path . --editor --quit
+          mkdir -p dist/windows
+          timeout 180s godot --headless --path . --export-release "Windows Desktop" dist/windows/RE-do-start-call.exe
+          test -s dist/windows/RE-do-start-call.exe
+          test -s dist/windows/RE-do-start-call.pck
+          (cd dist/windows && sha256sum * > SHA256SUMS.txt)
+          printf 'Godot 4.4.1 / source SHA %s / Linux cross-export; Windows visual playthrough NOT VERIFIED\n' "${GITHUB_SHA}" > dist/windows/BUILD-NOTES.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-a-windows-x64-cross-export
+          path: dist/windows/
+          if-no-files-found: error
+          retention-days: 14
+
+  windows-headless-smoke:
+    name: Real Windows runner launch smoke (NOT visual playthrough)
+    needs: windows-export
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-a-windows-x64-cross-export
+          path: dist/windows
+      - name: Validate PE + sidecar pack and launch headless
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $exe = (Resolve-Path "dist/windows/RE-do-start-call.exe").Path
+          $pck = (Resolve-Path "dist/windows/RE-do-start-call.pck").Path
+          if ((Get-Item $exe).Length -le 0 -or (Get-Item $pck).Length -le 0) { throw "Empty Windows export" }
+          $header = [System.IO.File]::ReadAllBytes($exe)
+          if ($header[0] -ne 77 -or $header[1] -ne 90) { throw "Not a Windows PE executable" }
+          Get-FileHash $exe -Algorithm SHA256 | Format-List
+          $proc = Start-Process -FilePath $exe -ArgumentList @("--headless", "--quit-after", "3", "--log-file", "windows-smoke.log") -PassThru
+          if (-not $proc.WaitForExit(30000)) { $proc.Kill(); throw "Windows headless launch timed out" }
+          if ($proc.ExitCode -ne 0) { throw "Windows headless exit $($proc.ExitCode)" }
+          "Windows headless startup completed; no graphics/input playthrough was performed" | Out-File windows-smoke-result.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-a-windows-runner-evidence
+          path: |
+            windows-smoke.log
+            windows-smoke-result.txt
+          if-no-files-found: warn
