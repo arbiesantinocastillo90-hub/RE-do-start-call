@@ -32,7 +32,7 @@ test('precisely one keyboard movement/attack and locked input during the next te
     phase: window.__redo.game.phase,
     player: { ...window.__redo.game.player },
     turn: window.__redo.game.turn,
-    warned: window.__redo.game.warned.map(c => c.x + ',' + c.y)
+    warned: [...window.__redo.game.warningIds]
   }));
   expect(first.phase).toBe('TELL');
   expect(first.turn).toBe(0);
