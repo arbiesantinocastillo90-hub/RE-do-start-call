@@ -143,15 +143,16 @@
       marker.style.transform = 'translate3d(' + tile.offsetLeft + 'px,' + tile.offsetTop + 'px,0)';
     }
     function pulse(node) {
-      if (!node || reduced()) return;
+      if (!node) return;
       node.classList.remove('redo-fx-hit');
       void node.offsetWidth; // Re-arm one finite animation, never a frame loop.
       node.classList.add('redo-fx-hit');
       later(() => node.classList.remove('redo-fx-hit'), MS.impact + 20);
     }
     function mark(keys, type) {
-      if (reduced()) return; // Static board warnings remain independently visible.
-      marks.replaceChildren();
+      // Attack and enemy-strike traces may overlap when the engine resolves
+      // synchronously. Retain both and expire each independent, finite group.
+      const group = [];
       for (const key of keys) {
         const tile = tileById(key);
         if (!tile) continue;
@@ -162,8 +163,10 @@
         node.style.width = tile.offsetWidth + 'px';
         node.style.height = tile.offsetHeight + 'px';
         marks.append(node);
+        group.push(node);
       }
-      later(() => marks.replaceChildren(), type === 'strike' ? MS.strike : MS.attack);
+      later(() => { for (const node of group) node.remove(); },
+        type === 'strike' ? MS.strike : MS.attack);
     }
     function observe(game) {
       const next = snapshot(game);
