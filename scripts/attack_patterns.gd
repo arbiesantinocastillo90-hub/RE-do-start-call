@@ -10,7 +10,7 @@ static func distance(a: Vector2i, b: Vector2i) -> int:
 
 static func cells_for(attack: String, origin: Vector2i, target: Vector2i) -> Array[Vector2i]:
     var out: Array[Vector2i] = []
-    if not inside(target) or origin == target:
+    if not inside(origin) or not inside(target) or origin == target:
         return out
     var delta := target - origin
     match attack:
