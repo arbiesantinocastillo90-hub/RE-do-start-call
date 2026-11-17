@@ -345,7 +345,7 @@ func _room_cleared() -> void:
         if first_choice == null:
             first_choice = b
         b.custom_minimum_size.y = 88
-        b.text = "%s\n+ %s\n− %s" % [entry["name"], entry["boon"], entry["cost"]]
+        b.text = "%s\nBENEFIT: %s\nCOST: %s" % [entry["name"], entry["boon"], entry["cost"]]
         b.add_theme_font_size_override("font_size", 14)
         b.pressed.connect(_take_modifier.bind(str(entry["id"])))
         reward_box.add_child(b)
