@@ -19,7 +19,7 @@ node tests/ui_contract.test.js
 node tests/preferences.test.js
 npm install --no-save @playwright/test@1.56.1
 npx playwright install chromium
-npx playwright test tests/ui_browser.spec.cjs tests/setup_browser.spec.cjs tests/release_menu_browser.spec.cjs --workers=1
+npx playwright test tests/ui_browser.spec.cjs tests/setup_browser.spec.cjs tests/effects_browser.spec.cjs tests/release_menu_browser.spec.cjs --workers=1
 ```
 
 The root redirect is source-inspected. Production Pages HTTP behavior is
@@ -46,10 +46,29 @@ complete three-room browser playthrough have been tested.
 
 ## Integration and evidence
 
-PR #11 is **stacked on** Agent C's #10, not main. Merge it into C's branch;
-reconcile native #9 and C's overlapping `scripts/main.gd` changes before
-final integration. Agent E #6 owns combat effects and should consume
-`window.RedoPreferences.current()`, `soundGain(current())` and
-`redo:preferenceschange` without changing this menu or gameplay rules.
-Retest the final main SHA in Node, Chromium and Godot. Agent D owns Windows
-artifact launch/manual QA; green web PR CI is not a release certificate.
+This patch is the **main-targeted Agent F follow-up PR #24**. PR #11 was
+originally stacked on C's #10; its changes were subsequently integrated
+into main via PR #14. PR #9 brought native turn-lock regression fixes.
+Agent E's effects integration #18 is **already part of the reviewed base**.
+PR #24's explicit merge commit preserves `web/effects.js`,
+`web/effects.css`, `effects.observe`, `effects.reset` and
+`effects.armAudio`, while adding F-only menu/reset/preferences.
+The combined Playwright suite must include the existing UI, effects, and
+release-menu tests.
+
+**Verified on PR #24 branch, head `70159ebf`:**
+- Node Actions run **44005265711**: syntax checks, 14 engine tests, 60
+  deterministic complete-room seeds, frozen encounter/warning parity,
+  UI contract and 8 preferences assertions — PASS.
+- Chromium Actions run **44005265885**: 10 Playwright browser tests,
+  including E combat effects, C 360 px/quiet HUD, F menu/reset,
+  blocked storage and saved audio/cosmetics — PASS.
+
+Check exact branch SHA and rerun on **merged main** before release. C's
+additional native HUD/360 px work in PR #21 must be reviewed against the
+shared `tests/ui_browser.spec.cjs` and UI workflow; never drop its
+accessibility coverage. Agent D owns Windows executable/real native
+launch, manual game QA and public browser URL verification. Neither
+this branch's green CI nor a successful Pages deploy job proves that a
+public game URL/Windows build was manually tested. Release A still
+requires signed-off end-to-end verification.
