@@ -1,0 +1,21 @@
+# Demo QA checklist
+
+- [ ] Godot 4.x imports with no missing scenes/scripts. (Not yet runtime-tested)
+- [x] Browser engine defines **6 rows × 6 columns** (Node tested); Godot render check pending.
+- [x] JS move boundary/occupancy rules implemented; Godot UI check pending.
+- [ ] At each player turn, actions are constrained to **move then attack**; cannot double-act while animating.
+- [ ] Jab, Sweep, Burst paint *exactly* the cells the attack resolves.
+- [ ] Player and enemy statuses persist, expire, and visibly signal source / hazard.
+- [ ] Self-inflicted hazards can hurt, but game has a fair survival path.
+- [x] 12 deterministic enemy attack patterns (Node tested).
+- [ ] Warning blink visible for tuning defaults; strike hits previously warned cells.
+- [ ] Telegraph speed adjustable, usable with reduced animation/projector setup.
+- [ ] Pipe uses a straight-line attack with rust DoT.
+- [ ] Hanger uses diagonal attacks with slowing drips.
+- [ ] Miniboss uses a recognizable symbolic mechanic, not a literal abuser.
+- [x] Browser engine flow verified by 60-seed autoplay; Godot UI check pending.
+- [x] Engine offers 3 distinct modifiers with benefits and costs after each of the first two rooms; browser UI manual check pending.
+- [ ] No rewind/meta-progression/shop/endings accidentally creep into the demo.
+- [ ] Death, restart, and victory have functioning UI transitions.
+- [ ] 5-minute demonstration can be completed without developer help.
+- [ ] Stable exported build for target OS; slides describe post-demo systems separately.

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="description" content="RE:(do)(start)(call) — a 6x6 turn-based psychological roguelike demo.">
+  <title>RE:(do)(start)(call) — Playable Demo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="shell">
+    <header class="masthead">
+      <div class="mast-brand"><div class="brand-icon" aria-hidden="true">↺</div><div><div class="eyebrow">THREE ROOMS · ONE LOOP · SIX BY SIX</div><h1>RE:<span>(do)</span><span>(start)</span><em>(call)</em></h1></div></div>
+      <div class="top-meta"><span class="status-led"></span><span>MEMORY CHANNEL / <strong>UNSTABLE</strong></span><span class="version">DEMO / 01</span></div>
+    </header>
+    <main class="layout">
+      <section class="play-column" aria-label="Combat board">
+        <div class="chapter-label"><span class="mini-label">FRAGMENT <span id="fragment">01</span> / 03</span><span class="tiny-arrow">◁ ▷</span></div>
+        <div class="arena-head"><div><div id="room-kicker" class="eyebrow warm">MEMORY LOCATION</div><h2 id="room-name">THE HALLWAY</h2></div><div class="round-tag" id="round-num">TURN 01</div></div>
+        <p id="room-line" class="room-line">The corridor remembers a sound dragged across the floor.</p>
+        <div class="board-frame"><div class="corner corner-tl"></div><div class="corner corner-br"></div><div id="board" class="board" role="grid" aria-label="6 by 6 tactical game board"></div></div>
+        <div class="board-legend"><span><i class="leg-player"></i>YOU</span><span><i class="leg-enemy"></i>MEMORY</span><span><i class="leg-warn"></i>THREAT FLASH</span><span><i class="leg-hazard"></i>LINGERING TILE</span></div>
+        <div class="narrative" aria-live="polite"><div class="narr-icon">“</div><p id="narrative">The air doesn't move until you notice it.</p></div>
+      </section>
+      <aside class="control-column" aria-label="Combat controls">
+        <div class="top-card"><div class="pill-row"><span class="pill">STATUS / LIVE</span><span id="phase-pill" class="pill pill-amber">WAITING</span></div>
+          <div class="health-grid"><div><div class="health-top"><span>YOU / BREATH</span><strong id="player-hp">14 / 14</strong></div><div class="health-track"><div class="health-fill" id="player-health-bar"></div></div></div>
+          <div><div class="health-top"><span id="enemy-label">RUSTED PIPE</span><strong id="enemy-hp">07 / 07</strong></div><div class="health-track enemy-track"><div class="health-fill enemy-fill" id="enemy-health-bar"></div></div></div></div>
+          <p id="instruction" class="instruction" aria-live="polite">Watch the danger tiles.</p></div>
+        <div class="control-card"><div class="card-heading"><span>01 / CHOOSE YOUR SHAPE</span><span id="choice-step" class="step-number">MOVE → ATTACK</span></div>
+          <div class="attack-buttons"><button type="button" data-attack="Jab" class="attack-choice"><span class="attack-symbol">·</span><span>JAB<small>1 TILE</small></span><b>1</b></button><button type="button" data-attack="Sweep" class="attack-choice"><span class="attack-symbol">━</span><span>SWEEP<small>LINE</small></span><b>2</b></button><button type="button" data-attack="Burst" class="attack-choice"><span class="attack-symbol">✛</span><span>BURST<small>PLUS</small></span><b>3</b></button></div>
+          <div class="move-actions"><button type="button" id="hold-btn" class="secondary-btn">HOLD POSITION <kbd>SPACE</kbd></button><button type="button" id="comfort-btn" class="secondary-btn" hidden>COMFORT / HEAL <kbd>E</kbd></button><button type="button" id="freeze-btn" class="secondary-btn" hidden>FREEZE / BLOCK <kbd>F</kbd></button></div>
+          <div class="keyboard-hint">MOVE: <strong>↑ ↓ ← →</strong> OR CLICK A NEIGHBOR · ATTACK: <strong>CLICK A TARGET</strong></div>
+        </div>
+        <div class="coping-card"><div class="card-heading">02 / COPING MECHANISMS <span id="mod-count">00 / 08</span></div><div class="mod-list" id="mod-list"><span class="muted">Nothing has been carried forward yet.</span></div></div>
+        <div class="log-card"><div class="card-heading">03 / FRAGMENTS OF STATIC</div><ul id="log" class="log-items" aria-live="polite"></ul></div>
+        <div class="settings-row"><label><input id="slow-tells" type="checkbox"> LONGER FLASHES <span>(ACCESSIBILITY)</span></label><label><input id="persist-tells" type="checkbox"> KEEP WARNING OUTLINES</label><button type="button" id="restart-btn">↻ RESET LOOP</button></div>
+      </aside>
+    </main>
+    <footer><span>THE HOUSE DOES NOT EXPLAIN ITSELF</span><span>RE:(do)(start)(call) — STUDENT DEMO / GODOT COMPANION</span></footer>
+  </div>
+  <div id="modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-panel"><div class="modal-eyebrow" id="modal-kicker">MEMORY // PROLOGUE</div><div class="modal-glitch" aria-hidden="true">◌</div><h2 id="modal-title">Something is<br>out of place.</h2><p id="modal-text">You ran until you couldn't see the road. When you opened your eyes, there was a house built from things you remembered.<br><br><strong>Observe the danger tiles while they flash. They vanish before you move.</strong> Move one square, then attack. Each of your attacks leaves a trace.</p><div id="modal-choices"></div><button id="modal-primary" class="primary-btn">OPEN YOUR EYES <span>→</span></button><div class="modal-footer">IT IS OKAY TO START AGAIN.</div></div>
+  </div>
+  <script src="engine.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
