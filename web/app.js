@@ -3,6 +3,20 @@
   const { Game, SIZE, MODS, cellsFor, p, id, distance } = window.RedoEngine;
   const $ = sel => document.querySelector(sel);
   const boardEl = $('#board');
+  // Agent E owns in-game presentation only; do not change engine turn semantics.
+  const boardFrame = $('.board-frame');
+  const aidVault = $('#aid-vault');
+  const aidTrigger = $('#aid-trigger');
+  const playerMarker = document.createElement('span');
+  playerMarker.className = 'player-marker no-motion';
+  playerMarker.setAttribute('aria-hidden', 'true');
+  playerMarker.innerHTML = '<span class="marker-core">◉</span>';
+  const strikeLayer = document.createElement('div');
+  strikeLayer.className = 'strike-layer';
+  strikeLayer.setAttribute('aria-hidden', 'true');
+  let priorFrame = null;
+  let strikeSerial = 0;
+  const flashTimers = new WeakMap();
   const tiles = [];
   let game = null;
   let hover = null;
@@ -23,7 +37,7 @@
       button.addEventListener('click', () => {
         if (!game) return;
         if (game.phase === 'MOVE') game.move(c);
-        else if (game.phase === 'ATTACK') game.attackAt(c);
+        else if (game.phase === 'ATTACK') attemptAttack(c);
       });
       button.addEventListener('mouseenter', () => { hover = c; if (game) drawBoard(game); });
       button.addEventListener('mouseleave', () => { hover = null; if (game) drawBoard(game); });
@@ -32,6 +46,90 @@
       boardEl.append(button); tiles.push(button);
     }
   }
+
+  boardEl.append(playerMarker, strikeLayer);
+  boardEl.classList.add('has-player-marker');
+
+  // Hover and keyboard focus reveal details temporarily. Tap/click pins them.
+  function syncAid() {
+    const expanded = aidVault.classList.contains('is-open') ||
+      aidVault.matches(':hover') || aidVault.contains(document.activeElement);
+    aidTrigger.setAttribute('aria-expanded', String(expanded));
+  }
+  aidTrigger.addEventListener('click', () => {
+    aidVault.classList.toggle('is-open');
+    syncAid();
+  });
+  for (const type of ['mouseenter', 'mouseleave', 'focusin']) {
+    aidVault.addEventListener(type, syncAid);
+  }
+  aidVault.addEventListener('focusout', () => window.setTimeout(syncAid, 0));
+
+  function positionMarker(s, previous) {
+    const tile = tiles[s.player.y * SIZE + s.player.x];
+    // Animate only a deliberate cardinal MOVE -> ATTACK transition; never a reset/room spawn.
+    const walked = previous && previous.roomIndex === s.roomIndex &&
+      previous.phase === 'MOVE' && s.phase === 'ATTACK' &&
+      distance(previous.player, s.player) === 1;
+    playerMarker.classList.toggle('no-motion', !walked);
+    playerMarker.style.width = tile.offsetWidth + 'px';
+    playerMarker.style.height = tile.offsetHeight + 'px';
+    playerMarker.style.setProperty('--marker-x', tile.offsetLeft + 'px');
+    playerMarker.style.setProperty('--marker-y', tile.offsetTop + 'px');
+  }
+
+  function pulse(node, className) {
+    const former = flashTimers.get(node);
+    if (former) window.clearTimeout(former);
+    node.classList.remove(className);
+    // Re-arm a one-shot transition without adding observers or animation loops.
+    void node.offsetWidth;
+    node.classList.add(className);
+    const handle = window.setTimeout(() => {
+      node.classList.remove(className);
+      flashTimers.delete(node);
+    }, 460);
+    flashTimers.set(node, handle);
+  }
+
+  function strikeFeedback(cells, directHit, enemy) {
+    const serial = ++strikeSerial;
+    strikeLayer.replaceChildren();
+    function mark(c, style) {
+      const tile = tiles[c.y * SIZE + c.x];
+      const el = document.createElement('span');
+      el.className = 'strike-mark ' + style;
+      el.style.left = tile.offsetLeft + 'px';
+      el.style.top = tile.offsetTop + 'px';
+      el.style.width = tile.offsetWidth + 'px';
+      el.style.height = tile.offsetHeight + 'px';
+      strikeLayer.append(el);
+    }
+    for (const cell of cells) mark(cell, 'strike-trace');
+    if (directHit) mark(enemy, 'strike-impact');
+    window.setTimeout(() => {
+      if (serial === strikeSerial) strikeLayer.replaceChildren();
+    }, 450);
+  }
+
+  // All attack effects are observational; the engine still resolves each action once.
+  function attemptAttack(c) {
+    if (!game || game.phase !== 'ATTACK') return;
+    const cells = cellsFor(game.attackName, game.player, c);
+    const enemy = { ...game.enemy };
+    const directHit = cells.some(tile => tile.x === enemy.x && tile.y === enemy.y);
+    if (game.attackAt(c)) strikeFeedback(cells, directHit, enemy);
+  }
+
+  function alignOnResize() {
+    if (!game) return;
+    positionMarker(game, null);
+    strikeSerial++;
+    strikeLayer.replaceChildren();
+  }
+  if ('ResizeObserver' in window) new ResizeObserver(alignOnResize).observe(boardEl);
+  else window.addEventListener('resize', alignOnResize, { passive: true });
+
   function drawBoard(s) {
     const preview = s.phase === 'ATTACK' && hover ? new Set(cellsFor(s.attackName, s.player, hover).map(id)) : new Set();
     for (let y = 0; y < SIZE; y++) for (let x = 0; x < SIZE; x++) {
@@ -92,6 +190,24 @@
     $('#freeze-btn').hidden = !s.has('freeze');
     $('#freeze-btn').disabled = !['MOVE', 'ATTACK'].includes(s.phase) || !s.freezeReady;
     drawBoard(s);
+
+    // Compare successive notified snapshots, including damage from lingering ground.
+    if (priorFrame && priorFrame.roomIndex === s.roomIndex) {
+      if (s.hp < priorFrame.hp) {
+        pulse($('#player-health-bar').parentElement, 'fx-health-hit');
+        pulse(boardFrame, 'fx-player-hit');
+      }
+      if (s.enemyHp < priorFrame.enemyHp) pulse($('#enemy-health-bar').parentElement, 'fx-health-hit');
+    }
+    if (!priorFrame || priorFrame.roomIndex !== s.roomIndex || s.turn < priorFrame.turn) {
+      ++strikeSerial;
+      strikeLayer.replaceChildren();
+    }
+    positionMarker(s, priorFrame);
+    priorFrame = {
+      roomIndex: s.roomIndex, turn: s.turn, phase: s.phase,
+      hp: s.hp, enemyHp: s.enemyHp, player: { ...s.player }
+    };
     if (s.phase === 'REWARD' && currentModal !== `reward${s.roomIndex}`) showReward(s);
     if (s.phase === 'WIN' && currentModal !== 'win') showEnd(s, true);
     if (s.phase === 'DEAD' && currentModal !== 'dead') showEnd(s, false);
