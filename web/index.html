@@ -21,21 +21,27 @@
         <div class="arena-head"><div><div id="room-kicker" class="eyebrow warm">MEMORY LOCATION</div><h2 id="room-name">THE HALLWAY</h2></div><div class="round-tag" id="round-num">TURN 01</div></div>
         <p id="room-line" class="room-line">The corridor remembers a sound dragged across the floor.</p>
         <div class="board-frame"><div class="corner corner-tl"></div><div class="corner corner-br"></div><div id="board" class="board" role="group" tabindex="-1" aria-label="6 by 6 board. Use arrows to move. After moving, use arrows to focus a target tile and Enter to attack."></div></div>
-        <div class="board-legend"><span><i class="leg-player"></i>YOU</span><span><i class="leg-enemy"></i>MEMORY</span><span><i class="leg-warn"></i>THREAT FLASH / OPTIONAL OUTLINE</span><span><i class="leg-hazard"></i>LINGERING TILE</span></div>
-        <div class="narrative" aria-live="off"><div class="narr-icon">“</div><p id="narrative">The air doesn't move until you notice it.</p></div>
+        <div id="aid-vault" class="aid-vault">
+          <button type="button" id="aid-trigger" class="aid-trigger" aria-expanded="false" aria-controls="aid-content"><span class="aid-glyph" aria-hidden="true">?</span><span>SIGNAL / EVENT MEMORY</span><span class="aid-trigger-action">HOVER · FOCUS · TAP</span></button>
+          <div id="aid-content" class="aid-content">
+            <p id="instruction" class="instruction">Watch the danger tiles.</p>
+            <div class="board-legend"><span><i class="leg-player"></i>YOU</span><span><i class="leg-enemy"></i>MEMORY</span><span><i class="leg-warn"></i>THREAT FLASH / OPTIONAL OUTLINE</span><span><i class="leg-hazard"></i>LINGERING TILE</span></div>
+            <div class="keyboard-hint">MOVE: <strong>ARROWS</strong> OR CLICK A NEIGHBOR · ATTACK: <strong>ARROWS TO FOCUS A TILE, ENTER / SPACE TO STRIKE</strong> OR CLICK A TARGET. <strong>1 / 2 / 3</strong> CHOOSE SHAPE.</div>
+            <div class="narrative" aria-live="off"><div class="narr-icon">“</div><p id="narrative">The air doesn't move until you notice it.</p></div>
+            <div class="log-card"><div class="card-heading">03 / FRAGMENTS OF STATIC</div><ul id="log" class="log-items" aria-live="off"></ul></div>
+          </div>
+        </div>
       </section>
       <aside class="control-column" aria-label="Combat controls">
         <div class="top-card"><div class="pill-row"><span class="pill">STATUS / LIVE</span><span id="phase-pill" class="pill pill-amber">WAITING</span></div>
           <div class="health-grid"><div><div class="health-top"><span>YOU / BREATH</span><strong id="player-hp">14 / 14</strong></div><div class="health-track"><div class="health-fill" id="player-health-bar"></div></div></div>
           <div><div class="health-top"><span id="enemy-label">RUSTED PIPE</span><strong id="enemy-hp">07 / 07</strong></div><div class="health-track enemy-track"><div class="health-fill enemy-fill" id="enemy-health-bar"></div></div></div></div>
-          <p id="instruction" class="instruction" role="status" aria-live="polite" aria-atomic="true">Watch the danger tiles.</p></div>
+</div>
         <div class="control-card"><div class="card-heading"><span>01 / CHOOSE YOUR SHAPE</span><span id="choice-step" class="step-number">MOVE → ATTACK</span></div>
           <div class="attack-buttons"><button type="button" data-attack="Jab" class="attack-choice"><span class="attack-symbol">·</span><span>JAB<small>1 TILE</small></span><b>1</b></button><button type="button" data-attack="Sweep" class="attack-choice"><span class="attack-symbol">━</span><span>SWEEP<small>LINE</small></span><b>2</b></button><button type="button" data-attack="Burst" class="attack-choice"><span class="attack-symbol">✛</span><span>BURST<small>PLUS</small></span><b>3</b></button></div>
           <div class="move-actions"><button type="button" id="hold-btn" class="secondary-btn">HOLD POSITION <kbd>SPACE</kbd></button><button type="button" id="comfort-btn" class="secondary-btn" hidden>COMFORT / HEAL <kbd>E</kbd></button><button type="button" id="freeze-btn" class="secondary-btn" hidden>FREEZE / BLOCK <kbd>F</kbd></button></div>
-          <div class="keyboard-hint">MOVE: <strong>ARROWS</strong> OR CLICK A NEIGHBOR · ATTACK: <strong>ARROWS TO FOCUS A TILE, ENTER / SPACE TO STRIKE</strong> OR CLICK A TARGET. <strong>1 / 2 / 3</strong> CHOOSE SHAPE.</div>
         </div>
         <div class="coping-card"><div class="card-heading">02 / COPING MECHANISMS <span id="mod-count">00 / 08</span></div><div class="mod-list" id="mod-list"><span class="muted">Nothing has been carried forward yet.</span></div></div>
-        <div class="log-card"><div class="card-heading">03 / FRAGMENTS OF STATIC</div><ul id="log" class="log-items" aria-live="off"></ul></div>
         <div class="settings-row"><label><input id="slow-tells" type="checkbox"> LONGER FLASHES <span>(AT LEAST 2.5 S; NEXT WARNING)</span></label><label><input id="persist-tells" type="checkbox"> KEEP WARNING OUTLINES AFTER FLASH</label><button type="button" id="restart-btn">↻ RESET LOOP</button></div>
       </aside>
     </main>
