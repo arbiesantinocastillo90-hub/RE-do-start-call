@@ -68,3 +68,58 @@ test('user and OS reduced motion retain non-strobing exact danger', async ({ pag
   expect(marks.length).toBeGreaterThan(0);
   expect(marks.every(name => name === 'none')).toBe(true);
 });
+
+test('lethal hit uses subdued defeat cue, never reward tone; no audio before Start', async ({ page }) => {
+  // Fake Web Audio makes oscillator pitches deterministic in headless Chromium;
+  // gameplay actions still use the actual DOM controls and engine.
+  await page.addInitScript(() => {
+    window.__fxAudioStarts = [];
+    class FakeAudioContext {
+      constructor() { this.currentTime = 0; this.state = 'running'; this.destination = {}; }
+      createOscillator() {
+        return {
+          frequency: {
+            setValueAtTime(value) { window.__fxAudioStarts.push(value); },
+            exponentialRampToValueAtTime() {}
+          },
+          connect() {}, disconnect() {}, start() {}, stop() {}
+        };
+      }
+      createGain() {
+        return {
+          gain: { setValueAtTime() {}, exponentialRampToValueAtTime() {} },
+          connect() {}, disconnect() {}
+        };
+      }
+      resume() { return Promise.resolve(); }
+      close() { return Promise.resolve(); }
+    }
+    Object.defineProperty(window, 'AudioContext', { configurable: true, value: FakeAudioContext });
+  });
+  await page.goto(url);
+  await expect(page.locator('#sound-level')).toHaveValue('off');
+  expect(await page.evaluate(() => window.__fxAudioStarts)).toEqual([],
+    'passive page load must not construct or play audio');
+  await page.locator('#sound-level').selectOption('full');
+  expect(await page.evaluate(() => window.__fxAudioStarts)).toEqual([],
+    'choosing a preference alone must not autoplay audio');
+  await page.locator('#modal-primary').click();
+  await expect(page.locator('.cell.telegraph')).toHaveCount(6);
+  // Seed only low HP to reach a lethal outcome in one genuine UI turn.
+  // Start tile (1,2) is in the exact Pipe warning; hold and an empty-floor
+  // Jab cannot kill the enemy or avoid the precommitted strike.
+  await page.evaluate(() => {
+    window.__redo.game.hp = 1;
+    window.__redo.game.finishTell();
+    window.__fxAudioStarts = [];
+  });
+  await page.locator('#hold-btn').click();
+  await page.locator('.cell[data-x="2"][data-y="2"]').click();
+  await expect(page.locator('#modal-title')).toContainText('starts again');
+  expect(await page.evaluate(() => window.__redo.game.phase)).toBe('DEAD');
+  const played = await page.evaluate(() => window.__fxAudioStarts);
+  expect(played).toContain(110); // impact
+  expect(played).toContain(164); // subdued defeat, not positive reward
+  expect(played).toContain(470); // accepted attack
+  expect(played).not.toContain(523); // never reward on defeat
+});

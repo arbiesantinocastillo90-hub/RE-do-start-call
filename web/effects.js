@@ -36,6 +36,14 @@
     if (before.phase !== after.phase && ['REWARD', 'WIN', 'DEAD'].includes(after.phase)) out.push('room-end');
     return out;
   }
+  // Terminal audio must match the outcome, not the generic room-end event.
+  // A loss must never reuse the positive reward jingle.
+  function endCue(phase) {
+    if (phase === 'REWARD') return 'reward';
+    if (phase === 'WIN') return 'win';
+    if (phase === 'DEAD') return 'defeat';
+    return null;
+  }
   function create(options) {
     const board = options.board;
     const tiles = options.tiles;
@@ -106,7 +114,7 @@
     function cue(kind) {
       if (!audio || !audioGain() || audio.state !== 'running') return;
       const frequencies = { tell: 349, hide: 262, move: 196, attack: 470,
-        strike: 127, hit: 110, reward: 523, room: 300 };
+        strike: 127, hit: 110, reward: 523, win: 659, defeat: 164, room: 300 };
       if (!Object.hasOwn(frequencies, kind)) return;
       try {
         const now = audio.currentTime;
@@ -204,7 +212,10 @@
         pulse(playerBar); pulse(frame); cue('hit');
       }
       if (changes.includes('enemy-hit')) pulse(enemyBar);
-      if (changes.includes('room-end')) cue('reward');
+      if (changes.includes('room-end')) {
+        const terminalTone = endCue(next.phase);
+        if (terminalTone) cue(terminalTone);
+      }
       prev = next;
     }
     function attack(cells, hit) {
@@ -220,5 +231,5 @@
       dispose: () => { reset(); observer?.disconnect(); if (!observer) root.removeEventListener('resize', align); if (audio) { audio.close().catch(() => {}); audio = null; } }
     });
   }
-  return Object.freeze({ MS, snapshot, classify, create });
+  return Object.freeze({ MS, snapshot, classify, endCue, create });
 });
