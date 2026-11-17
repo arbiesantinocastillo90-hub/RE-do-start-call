@@ -104,7 +104,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          specs=(tests/release_browser.spec.cjs)
+          specs=(tests/release_browser.spec.cjs tests/release_full_run_browser.spec.cjs)
           for f in tests/ui_browser.spec.cjs tests/setup_browser.spec.cjs tests/effects_browser.spec.cjs; do
             if [ -f "$f" ]; then specs+=("$f"); fi
           done
