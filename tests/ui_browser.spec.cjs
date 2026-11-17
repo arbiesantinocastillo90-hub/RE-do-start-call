@@ -5,6 +5,8 @@ const path = require('node:path');
 const gameUrl = pathToFileURL(path.resolve(__dirname, '../web/index.html')).href;
 
 test('setup, optional memory trace, and keyboard movement remain accessible', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.stack || error.message));
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto(gameUrl);
 
@@ -41,7 +43,9 @@ test('setup, optional memory trace, and keyboard movement remain accessible', as
   await expect(rail.locator('#phase-pill')).toHaveText('WATCH');
   await expect(rail.locator('#player-hp')).toHaveText('14 / 14');
   await expect(rail.locator('#instruction, #log, #room-hint, #slow-tells, #effect-pulse')).toHaveCount(0);
-  const duration = await page.evaluate(() => window.__redo.game.tellDuration);
+  const duration = await page.evaluate(() => window.__redo.game?.tellDuration ?? null);
+  expect(duration, pageErrors.join('\n')).not.toBeNull();
+  expect(pageErrors).toEqual([]);
   expect(duration).toBeGreaterThanOrEqual(2.5);
 
   // A viewer should not encounter the exact pattern name until deliberately revealing notes.
