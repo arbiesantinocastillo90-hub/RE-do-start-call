@@ -126,6 +126,20 @@ func _run() -> void:
     _check(owned.is_empty(), "Keyboard restart discards prior modifiers")
     _check(game.get("round_turn") == 0, "Keyboard restart resets turn counter")
 
+    # Numb-immune floor marks must not incorrectly block Flinch escape.
+    # Other neighbors are warned; the only clear escape is an echo-marked tile.
+    game.call("_start_run")
+    game.set("player", Vector2i(2, 2))
+    game.set("enemy", Vector2i(4, 2))
+    game.set("warned", [Vector2i(2, 2), Vector2i(3, 2), Vector2i(2, 3), Vector2i(1, 2)])
+    game.call("_add_ground", Vector2i(2, 1), "echo", "enemy", 2, 1)
+    game.set("owned", ["flinch"])
+    _check(game.call("_find_flinch_tile") == Vector2i(-1, -1), "Without Numb an echo-marked escape is unsafe")
+    game.set("owned", ["flinch", "numb"])
+    _check(game.call("_find_flinch_tile") == Vector2i(2, 1), "Numb permits Flinch onto immune echo")
+    game.call("_add_ground", Vector2i(2, 1), "drip", "enemy", 2, 1)
+    _check(game.call("_find_flinch_tile") == Vector2i(-1, -1), "Numb does not ignore drip movement slow")
+
     game.queue_free()
     if failures == 0:
         print("PASS: Godot turn-flow regression suite")
