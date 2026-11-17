@@ -35,6 +35,12 @@ test('finite combat feedback, exact warning visibility and setup cancellation', 
   expect(afterAttack).toMatchObject({phase:'TELL',turn:1,attack:1});
   expect(afterAttack.strike).toBeGreaterThan(0);
   await page.locator('#setup-btn').click();
+  // Agent F confirmation intentionally preserves both gameplay and transient
+  // FX until the user explicitly chooses to discard the current run.
+  await expect(page.locator('#modal-title')).toContainText('Leave this loop?');
+  expect(await page.evaluate(() => window.__redo.game?.phase)).toBe('TELL');
+  await page.locator('#modal-primary').click();
+  await expect(page.locator('#setup-options')).toBeVisible();
   expect(await page.evaluate(() => ({
     marks: document.querySelectorAll('.redo-fx-mark').length,
     markerHidden: document.querySelector('.redo-fx-player').hidden,
