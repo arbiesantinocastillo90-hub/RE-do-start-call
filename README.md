@@ -103,3 +103,11 @@ Four independent GPT chat interfaces were created inside the user-shared Canvas 
 ## GitHub
 
 The remote repo name is **`RE-do-start-call`**. The GitHub connector on this account did not expose repository creation, and the browser requested GitHub sign-in, so no remote repository can be honestly claimed yet. You can upload the extracted contents to a new repo; the GitHub Actions workflow will verify the JS game engine after upload.
+
+## UI refinement screenshot (November 17, 2026)
+
+The screenshot below was supplied as design feedback. The red annotations request that in-game hint text and recent-event descriptions become visible on **hover or keyboard focus**, while the status panel shows only essential live information. Put character customization, effects and accessibility settings in the pre-game menu rather than the active combat panel.
+
+![User-provided annotated gameplay UI feedback](assets/screenshots/ui-feedback-2026-11-17.png)
+
+See the associated [UI refinement issue](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/issues) for tracking.
