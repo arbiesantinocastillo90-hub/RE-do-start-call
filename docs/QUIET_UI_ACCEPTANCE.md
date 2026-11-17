@@ -32,7 +32,7 @@ Only **phase/status**, **player and enemy HP**, **cardinal move/hold**, **attack
 
 | Context | Action | Expected |
 | --- | --- | --- |
-| Setup modal | Tab to all radio buttons, select, checkboxes, start; Shift+Tab wraps backward | No focus leaves dialog; no attack/move |
+| Setup modal | Tab into the shape radio group, arrow between shapes, then Tab to select/checkboxes/start; Shift+Tab wraps backward | No focus leaves dialog; no attack/move |
 | Setup modal | Press arrows while focused on native radio/select | Native control changes; gameplay is inert |
 | Live board, MOVE | Arrow keys or click neighboring tile; Space/hold | Cardinal movement/hold only, no diagonal moves |
 | Live board, ATTACK | 1/2/3 selects shape; arrows focus target; Enter/Space attacks | Visible focus and correct geometry; invalid attack stays ATTACK |
