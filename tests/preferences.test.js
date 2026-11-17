@@ -16,8 +16,8 @@ const fakeStorage = () => {
 
 check('default pre-game settings', () => {
   assert.deepEqual(Prefs.load(null), { ...Prefs.defaults });
-  assert.equal(Prefs.soundGain(Prefs.defaults), 0, 'audio must be muted on a fresh install');
-  assert.equal(Prefs.soundGain({sound:'quiet'}), 0.25);
+  assert.equal(Prefs.soundGain(Prefs.defaults), 0, 'fresh browser sessions start with optional sound muted');
+  assert.equal(Prefs.soundGain({ sound: 'quiet' }), 0.25);
 });
 check('round-trip preferences and isolate game state', () => {
   const storage = fakeStorage();
@@ -35,6 +35,21 @@ check('untrusted and malformed values cannot mutate options', () => {
   assert.deepEqual(Prefs.normalize({avatar:'<img>',sound:1000,slowTells:'yes',tint:null}), { ...Prefs.defaults });
   assert.deepEqual(Prefs.normalize([]), { ...Prefs.defaults });
   assert.equal(Prefs.soundGain({sound:'full'}),0.7);
+});
+check('volume and mute are bounded, persisted and backward-compatible', () => {
+  assert.equal(Prefs.soundGain({sound:'full',volume:50}),0.35);
+  assert.equal(Prefs.soundGain({sound:'full',volume:50,muted:true}),0);
+  assert.equal(Prefs.soundGain({sound:'quiet',volume:0}),0);
+  assert.equal(Prefs.normalize({volume:400}).volume,100);
+  assert.equal(Prefs.normalize({volume:-10}).volume,0);
+  assert.equal(Prefs.normalize({volume:'100',muted:'yes'}).volume,100);
+  assert.equal(Prefs.normalize({volume:'100',muted:'yes'}).muted,false);
+  const storage = fakeStorage();
+  assert.equal(Prefs.save({avatar:'star',sound:'full',volume:35,muted:true},storage),true);
+  assert.equal(Prefs.load(storage).volume,35);
+  assert.equal(Prefs.load(storage).muted,true);
+  storage.put(Prefs.key, JSON.stringify({avatar:'diamond',sound:'quiet'}));
+  assert.equal(Prefs.load(storage).volume,100,'legacy settings maintain original gain');
 });
 check('bad JSON falls back to defaults', () => {
   const storage = fakeStorage();
@@ -58,7 +73,7 @@ check('menu, scripts and HUD boundaries are present', () => {
   const html = fs.readFileSync(path.join(__dirname,'../web/index.html'),'utf8');
   assert.ok(html.indexOf('src="preferences.js"') < html.indexOf('src="app.js"'));
   assert.ok(html.includes('id="setup-options"'));
-  for (const id of ['avatar-preview','sound-test','sound-level','reduce-motion','high-contrast','slow-tells','persist-tells','clue-trigger']) {
+  for (const id of ['avatar-preview','sound-test','sound-level','sound-volume','mute-sound','reduce-motion','high-contrast','slow-tells','persist-tells','clue-trigger']) {
     assert.ok(html.includes('id="' + id + '"'), id);
   }
   assert.match(html,/id="clue-panel"[^>]*hidden/);

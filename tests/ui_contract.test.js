@@ -25,6 +25,11 @@ assert.match(html, /id="clue-trigger"[^>]*aria-expanded="false"[^>]*aria-control
 assert.match(app, /clueTrigger\.setAttribute\('aria-expanded', String\(open\)\)/);
 assert.match(app, /cluePanel\.hidden = !open/);
 assert.match(html, /role="dialog" aria-modal="true"/);
+for (const id of ['modal-secondary','menu-howto','menu-content','menu-credits','sound-volume','mute-sound']) {
+  assert.match(html, new RegExp('id="' + id + '"'), 'missing release menu option ' + id);
+}
+assert.match(app, /function requestSetup\(\)/, 'active combat reset requires confirmation');
+assert.match(app, /function cancelReset\(\)/, 'reset cancellation must preserve the run');
 for (const id of ['setup-options', 'avatar-tint', 'avatar-preview', 'slow-tells', 'persist-tells', 'effect-scanlines', 'effect-pulse']) {
   assert.match(html, new RegExp('id="' + id + '"'), 'missing pregame choice ' + id);
 }

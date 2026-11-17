@@ -12,7 +12,9 @@ test('settings persist through reload, apply before a run, and never persist gam
   await page.locator('#reduce-motion').check();
   await page.locator('#high-contrast').check();
   await page.locator('#slow-tells').check();
-  await page.locator('#sound-level').selectOption('off');
+  await page.locator('#sound-level').selectOption('full');
+  await page.locator('#sound-volume').evaluate(el => { el.value = '40'; el.dispatchEvent(new Event('change', { bubbles: true })); });
+  await page.locator('#mute-sound').check();
   await expect(page.locator('#avatar-preview-glyph')).toHaveText('✦');
   await expect(page.locator('#sound-test')).toBeDisabled();
   await page.screenshot({path:'release-setup-desktop.png',fullPage:true});
@@ -29,14 +31,20 @@ test('settings persist through reload, apply before a run, and never persist gam
     turn: window.__redo.game.turn,
     stored: JSON.parse(localStorage.getItem(window.RedoPreferences.key))
   }));
-  expect(state.settings.sound).toBe('off');
+  expect(state.settings.sound).toBe('full');
+  expect(state.settings.volume).toBe(40);
+  expect(state.settings.muted).toBe(true);
+  expect(state.stored.volume).toBe(40);
+  expect(state.stored.muted).toBe(true);
   expect(state.stored.avatar).toBe('star');
   expect(state.stored).not.toHaveProperty('hp');
   expect(state.stored).not.toHaveProperty('roomIndex');
   expect(state.turn).toBe(0);
   await page.reload();
   await expect(page.locator('input[name="avatar-shape"][value="star"]')).toBeChecked();
-  await expect(page.locator('#sound-level')).toHaveValue('off');
+  await expect(page.locator('#sound-level')).toHaveValue('full');
+  await expect(page.locator('#sound-volume')).toHaveValue('40');
+  await expect(page.locator('#mute-sound')).toBeChecked();
   await expect(page.locator('#reduce-motion')).toBeChecked();
   await expect(page.locator('#high-contrast')).toBeChecked();
   await expect(page.locator('#slow-tells')).toBeChecked();

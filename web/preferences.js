@@ -15,7 +15,9 @@
     pulse: true,
     highContrast: false,
     reduceMotion: false,
-    sound: 'off'
+    sound: 'off',
+    volume: 100,
+    muted: false
   });
   const OPTIONS = {
     avatar: ['circle', 'diamond', 'star'],
@@ -23,7 +25,7 @@
     sound: ['off', 'quiet', 'full']
   };
   const VOLUMES = Object.freeze({ off: 0, quiet: 0.25, full: 0.7 });
-  const BOOLEAN_KEYS = ['slowTells', 'persistTells', 'scanlines', 'pulse', 'highContrast', 'reduceMotion'];
+  const BOOLEAN_KEYS = ['slowTells', 'persistTells', 'scanlines', 'pulse', 'highContrast', 'reduceMotion', 'muted'];
 
   function normalize(value) {
     const input = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -33,6 +35,10 @@
     }
     for (const key of BOOLEAN_KEYS) {
       if (typeof input[key] === 'boolean') next[key] = input[key];
+    }
+    // Percent volume is bounded and numeric. Existing v1 saves default to 100%.
+    if (typeof input.volume === 'number' && Number.isFinite(input.volume)) {
+      next.volume = Math.max(0, Math.min(100, Math.round(input.volume)));
     }
     return next;
   }
@@ -66,6 +72,9 @@
     save,
     current: () => ({ ...active }),
     setCurrent: value => { active = normalize(value); return { ...active }; },
-    soundGain: value => VOLUMES[normalize(value).sound]
+    soundGain: value => {
+      const safe = normalize(value);
+      return safe.muted ? 0 : VOLUMES[safe.sound] * safe.volume / 100;
+    }
   });
 });
