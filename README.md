@@ -8,16 +8,28 @@
 
 ### Instant browser demo — no Godot required
 
-Open **`web/index.html`** in a modern browser after extracting this archive. No installation, network access, or third-party libraries are required.
+For local play, open **`web/index.html`** in a modern browser. Alternatively run
+`python -m http.server 8000` from the repository root and open
+`http://localhost:8000/`; the root entry forwards to `./web/`.
+The game needs no account, backend, or runtime library downloads.
 
-Select **OPEN YOUR EYES**. Memorize the briefly flashed attack squares. When the tell disappears, move once and then attack. After clearing a room choose one of three offered coping modifiers. Survive all three rooms to win the demo.
+Select a shape (circle, diamond or star) and a tint, review **How to Play**
+or **Content Notice**, adjust accessibility and audio, and choose
+**START NEW LOOP**. Memorize the briefly flashed attack squares. When they
+disappear, move once (or HOLD), select an attack and click/tap/aim at a target.
+Choose one of three coping modifiers after each of the first two rooms, then
+clear the third room for the demo-only completion screen. During a run,
+**R / Escape / SETUP** opens a confirmation before discarding progress.
 
 ### Godot 4 project
 
 1. Open Godot 4.x → Import → `project.godot`.
 2. Run the project (F5) or `scenes/main.tscn` (F6).
 3. Arrow keys / clicking adjacent squares to move; Space to hold; 1/2/3 select Jab/Sweep/Burst; click an attack target; E/F trigger ability when unlocked; R restarts.
-4. **Godot editor import/runtime testing is still required.** The Godot binary was not available here, and the authoring environment could not run it.
+4. Headless Godot 4.4.1 import/script parsing and regression tests are tracked
+   in GitHub Actions, but **native GUI playthrough, keyboard focus in the
+   running app and tested Windows export** remain separate release gates.
+   Do not treat a headless green check as a fully tested Windows build.
 
 ## Pitch
 
@@ -40,20 +52,39 @@ A boy runs away from home in a burst of emotion. When he opens his eyes, a fract
 | Life cycle | Room transitions, HP, death/restart, demonstration win screen |
 | Browser accessibility | Longer warnings, optionally retaining threat outlines |
 
-The **browser build** includes a responsive UI, hover attack previews, accessible tile labels, a warning phase display, combat log, modifier-choice overlays, and keyboard controls. The **Godot build** includes a simple generated flat-shape UI and scrollable rewards panel.
+The **browser build** includes a responsive and focusable 6×6 board, hover
+attack previews, accessible warning symbols, optional hidden-by-default
+**MEMORY TRACE** logs/hints, three cosmetic shapes and tints, keyboard/touch
+controls, reduced-motion and warning options, local-only allowlisted
+preferences, independent mute and volume, and bounded visual/audio feedback.
+The **Godot build** contains a generated flat-shape tactical interface;
+native GUI/export usability still needs manual validation.
 
 ## Run the tests
 
-Requires Node.js (for tests only):
+Requires Node.js for deterministic test execution:
 
 ```bash
 node --check web/engine.js
+node --check web/preferences.js
+node --check web/effects.js
 node --check web/app.js
 node tests/engine.test.js
 node tests/autoplay.test.js
+node tests/ui_contract.test.js
+node tests/preferences.test.js
+node tests/effects.test.js
+npm install --no-save @playwright/test@1.56.1
+npx playwright install chromium
+npx playwright test tests/ui_browser.spec.cjs tests/setup_browser.spec.cjs tests/effects_browser.spec.cjs tests/release_menu_browser.spec.cjs --workers=1
 ```
 
-The browser game engine has **13 unit tests** and a **60-seed complete-run autoplay plus exhaustive baseline attack safety** test. Those tests were executed successfully at creation. Browser UI screenshot validation and Godot runtime validation were blocked by the environment, so neither is claimed as completed.
+Branch CI has run **14 engine tests**, **60 seeded complete victories**, 12
+frozen encounter patterns and their warning-to-strike parity fixtures,
+**8 preference tests**, and **10 real Chromium Playwright cases**. See the
+[Release A browser UX verification report](docs/WEB_RELEASE_UX.md) for exact
+runs, coverage, known gaps and manual checks. Green branch CI does not prove
+the merged release or the actual Windows/browser public deployment is verified.
 
 For Godot, after installing version 4:
 
@@ -75,13 +106,17 @@ RE-do-start-call/
 │   └── modifiers.gd            Eight boon-with-cost options
 ├── web/
 │   ├── index.html              Play locally
-│   ├── style.css               Flat/glitch visual system
+│   ├── style.css / effects.css Visual styling and bounded effects
 │   ├── engine.js               Pure, testable game state machine
-│   └── app.js                  Browser UI
+│   ├── preferences.js           Allowlisted browser-only settings
+│   ├── effects.js               Cosmetic presentation / optional sound
+│   └── app.js                   Browser UI
 ├── tests/
-│   ├── engine.test.js          13 JS unit tests
-│   ├── autoplay.test.js        60 full-run reachability tests
-│   └── test_geometry.gd        Godot geometry assertions
+│   ├── engine.test.js           Deterministic engine assertions
+│   ├── autoplay.test.js         60 full-run reachability tests
+│   ├── preferences.test.js      Saved settings and blocked storage
+│   ├── release_menu_browser.spec.cjs  Chromium menu/reset cases
+│   └── test_geometry.gd         Godot geometry assertions
 ├── docs/
 │   ├── GAMEPLAY_IMPLEMENTATION.md
 │   ├── DEMO_SPEC.md
@@ -102,7 +137,13 @@ Four independent GPT chat interfaces were created inside the user-shared Canvas 
 
 ## GitHub
 
-The remote repo name is **`RE-do-start-call`**. The GitHub connector on this account did not expose repository creation, and the browser requested GitHub sign-in, so no remote repository can be honestly claimed yet. You can upload the extracted contents to a new repo; the GitHub Actions workflow will verify the JS game engine after upload.
+The authoritative repository **exists** at
+[arbiesantinocastillo90-hub/RE-do-start-call](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call).
+GitHub Actions runs Node/Chromium checks and headless Godot testing; its
+Pages workflow has produced a successful deployment run, but **the public
+browser URL and its actual 3-room playability have not been independently
+verified**. Windows distribution and manual native/browser release evidence
+are still required before declaring Release A ready.
 
 ## UI refinement screenshot (November 17, 2026)
 
