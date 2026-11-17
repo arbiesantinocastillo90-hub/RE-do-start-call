@@ -106,12 +106,40 @@
   button,.cell{transition:none!important}
 }
 
+
+/* Agent F: pre-game release menu and preference accessibility. No in-game effects added here. */
+.modal-panel h2{overflow-wrap:anywhere;font-size:clamp(23px,3.1vw,37px)}
 .avatar-preview{display:flex;align-items:center;gap:15px;padding:9px 13px;margin-top:12px;background:#101b27;border:1px solid #485d6e}
-.avatar-preview-glyph{display:grid;place-items:center;width:42px;height:42px;border:1px solid #657684;background:#263548;font-size:25px;color:#79baaa}
+.avatar-preview-glyph{display:grid;place-items:center;width:42px;height:42px;border:1px solid #657684;background:#263548;font-size:25px;color:var(--avatar-fill)}
 .avatar-preview strong,.avatar-preview small{display:block;font-size:10px;letter-spacing:.11em;color:#d4e1df}
 .avatar-preview small{margin-top:3px;color:#b9c7d1}
+.setup-test-btn{display:block;width:100%;text-align:center;margin-top:12px;background:#263c44;border:1px solid #85a39b;color:#e3f3ee;min-height:42px;font-size:11px;letter-spacing:.08em}
+.setup-test-btn:disabled{opacity:.55;cursor:not-allowed}
+.setup-controls p{margin:10px 0 0;font-size:11px;color:#cbd9df;line-height:1.75}
+.setup-controls kbd{display:inline-block;border:1px solid #728e9a;background:#253746;padding:1px 5px;color:#fff;border-radius:2px;font:inherit}
+.high-contrast{--muted:#c2d4df;--line:#849eb2;--teal:#c0f7ee;--text:#f8fcff}
+.high-contrast .top-card,.high-contrast .control-card,.high-contrast .coping-card,.high-contrast .clue-panel{border-color:#a6bbc9}
+.high-contrast .cell{border-color:#849eae}
+.high-contrast .cell.ghost{box-shadow:inset 0 0 0 4px #ffe2a6}
+.high-contrast .step-btn,.high-contrast .attack-choice{border-color:#94b3c2}
+.user-reduced-motion .scanlines{display:none!important}
+.user-reduced-motion .cell.telegraph{animation:none!important}
+.user-reduced-motion .cell,.user-reduced-motion button,.user-reduced-motion .health-fill{transition:none!important}
+@media(max-width:560px){
+  .avatar-preview{padding:9px 11px}
+  .avatar-preview-glyph{width:38px;height:38px;font-size:23px}
+  .setup-controls p{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){
+  .health-fill{transition:none!important}
+}
+@media(forced-colors:active){
+  .cell.telegraph{outline:3px solid Highlight;outline-offset:-3px}
+  .cell.you{outline:3px solid CanvasText;outline-offset:-4px}
+}
 
-/* Keep the primary start action visible on common 800px-tall desktop windows. */
+
+/* Compact, scroll-safe release setup. Start remains reachable on 800px laptops. */
 .modal-backdrop[data-view="setup"] .modal-panel{padding:19px 30px;max-height:calc(100dvh - 24px)}
 .modal-backdrop[data-view="setup"] .modal-panel h2{font-size:30px;margin:9px 0 8px}
 .modal-backdrop[data-view="setup"] .modal-panel p{line-height:1.5;margin-bottom:7px}
@@ -123,4 +151,5 @@
 .modal-backdrop[data-view="setup"] .setup-select{margin-top:9px}
 .modal-backdrop[data-view="setup"] .setup-check{margin-top:4px;min-height:23px}
 .modal-backdrop[data-view="setup"] .modal-footer{margin-top:8px}
+.modal-backdrop[data-view="setup"] #modal-primary{position:sticky;bottom:0;z-index:2;box-shadow:0 -8px 24px #101b27b8}
 @media(max-width:560px){.modal-backdrop[data-view="setup"] .modal-panel{padding:18px 15px}}
