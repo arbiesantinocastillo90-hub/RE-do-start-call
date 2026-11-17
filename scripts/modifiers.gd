@@ -20,8 +20,12 @@ static func find(id: String) -> Dictionary:
 static func choices(owned: Array[String], randomizer: RandomNumberGenerator) -> Array[Dictionary]:
     var pool: Array[Dictionary] = []
     for item in DEFINITIONS:
-        if not owned.has(item["id"]):
-            pool.append(item)
+        if owned.has(item["id"]):
+            continue
+        # A healing-only boon cannot function with Numb; never offer that inert pairing.
+        if (owned.has("numb") and item["id"] == "comfort") or (owned.has("comfort") and item["id"] == "numb"):
+            continue
+        pool.append(item)
     var result: Array[Dictionary] = []
     while result.size() < 3 and not pool.is_empty():
         var i := randomizer.randi_range(0, pool.size() - 1)

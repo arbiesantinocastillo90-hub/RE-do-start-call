@@ -1,0 +1,208 @@
+{
+  "schema": 1,
+  "board_size": 6,
+  "description": "Immutable Release A encounter baseline: coordinates x,y; one four-pattern cycle per house room.",
+  "rooms": [
+    {
+      "title": "THE HALLWAY",
+      "enemy": "RUSTED PIPE",
+      "hp": 7,
+      "pos": [
+        4,
+        2
+      ],
+      "spawn": [
+        1,
+        2
+      ],
+      "tell": 0.95,
+      "damage": 2,
+      "effect": "rust",
+      "effect_damage": 1,
+      "patterns": [
+        {
+          "name": "PIPE / HORIZONTAL",
+          "tiles": [
+            "0,2",
+            "1,2",
+            "2,2",
+            "3,2",
+            "4,2",
+            "5,2"
+          ]
+        },
+        {
+          "name": "PIPE / VERTICAL",
+          "tiles": [
+            "1,0",
+            "1,1",
+            "1,2",
+            "1,3",
+            "1,4",
+            "1,5"
+          ]
+        },
+        {
+          "name": "PIPE / HORIZONTAL",
+          "tiles": [
+            "0,4",
+            "1,4",
+            "2,4",
+            "3,4",
+            "4,4",
+            "5,4"
+          ]
+        },
+        {
+          "name": "PIPE / VERTICAL",
+          "tiles": [
+            "4,0",
+            "4,1",
+            "4,2",
+            "4,3",
+            "4,4",
+            "4,5"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "THE WINDOW ROOM",
+      "enemy": "MELTED HANGER",
+      "hp": 10,
+      "pos": [
+        4,
+        1
+      ],
+      "spawn": [
+        1,
+        4
+      ],
+      "tell": 0.7,
+      "damage": 2,
+      "effect": "drip",
+      "effect_damage": 0,
+      "patterns": [
+        {
+          "name": "HANGER / DIAGONAL",
+          "tiles": [
+            "5,0",
+            "4,1",
+            "3,2",
+            "2,3",
+            "1,4",
+            "0,5"
+          ]
+        },
+        {
+          "name": "HANGER / DIAGONAL",
+          "tiles": [
+            "0,0",
+            "1,1",
+            "2,2",
+            "3,3",
+            "4,4",
+            "5,5"
+          ]
+        },
+        {
+          "name": "HANGER / DIAGONAL",
+          "tiles": [
+            "3,0",
+            "2,1",
+            "1,2",
+            "0,3"
+          ]
+        },
+        {
+          "name": "HANGER / DIAGONAL",
+          "tiles": [
+            "2,0",
+            "3,1",
+            "4,2",
+            "5,3"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "THE ROOM THAT RINGS",
+      "enemy": "THE UNANSWERED CALL",
+      "hp": 15,
+      "pos": [
+        4,
+        2
+      ],
+      "spawn": [
+        1,
+        4
+      ],
+      "tell": 0.6,
+      "damage": 3,
+      "effect": "echo",
+      "effect_damage": 1,
+      "patterns": [
+        {
+          "name": "CALL / CROSS",
+          "tiles": [
+            "2,0",
+            "2,1",
+            "0,2",
+            "1,2",
+            "3,2",
+            "4,2",
+            "5,2",
+            "2,3",
+            "2,4",
+            "2,5"
+          ]
+        },
+        {
+          "name": "CALL / DIAGONAL",
+          "tiles": [
+            "0,0",
+            "5,0",
+            "1,1",
+            "4,1",
+            "2,2",
+            "3,2",
+            "2,3",
+            "3,3",
+            "1,4",
+            "4,4",
+            "0,5",
+            "5,5"
+          ]
+        },
+        {
+          "name": "CALL / NEAR RING",
+          "tiles": [
+            "3,0",
+            "2,1",
+            "4,1",
+            "1,2",
+            "5,2",
+            "2,3",
+            "4,3",
+            "3,4"
+          ]
+        },
+        {
+          "name": "CALL / FAR RING",
+          "tiles": [
+            "2,0",
+            "4,0",
+            "1,1",
+            "5,1",
+            "0,2",
+            "1,3",
+            "5,3",
+            "2,4",
+            "4,4",
+            "3,5"
+          ]
+        }
+      ]
+    }
+  ]
+}
