@@ -33,6 +33,11 @@ jobs:
           godot --version
       - name: Import project and parse scripts
         run: godot --headless --path . --editor --quit
+      - name: Strict script parse checks (fail fast)
+        run: |
+          godot --headless --path . --check-only --script res://scripts/attack_patterns.gd
+          godot --headless --path . --check-only --script res://scripts/main.gd
+          godot --headless --path . --check-only --script res://tests/test_turn_flow.gd
       - name: Geometry and telegraph patterns
         run: timeout 30s godot --headless --path . --script res://tests/test_geometry.gd
       - name: Turn locking, keyboard and restart regression suite
