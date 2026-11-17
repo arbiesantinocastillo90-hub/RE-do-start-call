@@ -85,6 +85,8 @@ test('setup, optional memory trace, and keyboard movement remain accessible', as
   expect(await page.evaluate(() => window.__redo.game.roomIndex)).toBe(1);
 
   await page.locator('#setup-btn').click();
+  await expect(page.locator('#modal-title')).toContainText('Leave this loop?');
+  await page.locator('#modal-primary').click(); // Confirm; active progress must never reset on one click.
   await expect(page.locator('#setup-options')).toBeVisible();
   await expect(rail.locator('#instruction, #log')).toHaveCount(0);
   await page.screenshot({ path: 'quiet-ui-setup.png', fullPage: true });
