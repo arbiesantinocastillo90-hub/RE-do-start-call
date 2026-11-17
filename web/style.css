@@ -110,3 +110,17 @@
 .avatar-preview-glyph{display:grid;place-items:center;width:42px;height:42px;border:1px solid #657684;background:#263548;font-size:25px;color:#79baaa}
 .avatar-preview strong,.avatar-preview small{display:block;font-size:10px;letter-spacing:.11em;color:#d4e1df}
 .avatar-preview small{margin-top:3px;color:#b9c7d1}
+
+/* Keep the primary start action visible on common 800px-tall desktop windows. */
+.modal-backdrop[data-view="setup"] .modal-panel{padding:19px 30px;max-height:calc(100dvh - 24px)}
+.modal-backdrop[data-view="setup"] .modal-panel h2{font-size:30px;margin:9px 0 8px}
+.modal-backdrop[data-view="setup"] .modal-panel p{line-height:1.5;margin-bottom:7px}
+.modal-backdrop[data-view="setup"] .setup-options{gap:8px;margin:10px 0 11px}
+.modal-backdrop[data-view="setup"] .setup-options fieldset{padding:7px 11px 9px}
+.modal-backdrop[data-view="setup"] .shape-options label>span{padding:5px 3px;font-size:20px}
+.modal-backdrop[data-view="setup"] .avatar-preview{margin-top:7px;padding:6px 10px}
+.modal-backdrop[data-view="setup"] .avatar-preview-glyph{width:36px;height:36px;font-size:22px}
+.modal-backdrop[data-view="setup"] .setup-select{margin-top:9px}
+.modal-backdrop[data-view="setup"] .setup-check{margin-top:4px;min-height:23px}
+.modal-backdrop[data-view="setup"] .modal-footer{margin-top:8px}
+@media(max-width:560px){.modal-backdrop[data-view="setup"] .modal-panel{padding:18px 15px}}
