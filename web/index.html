@@ -99,7 +99,6 @@
       <h2 id="modal-title">RE:(do)(start)(call)</h2>
       <p id="modal-text">Three rooms. One loop. Customize your signal, then open the door.</p>
       <form id="setup-options" class="setup-options">
-        <div class="setup-preview" aria-label="Character appearance preview"><span class="setup-preview-label">YOUR SIGNAL / COSMETIC ONLY</span><span id="avatar-preview" class="avatar-preview" aria-hidden="true">◉</span><span id="avatar-description" class="setup-preview-name">CIRCLE · MOSS / TEAL</span></div>
         <fieldset>
           <legend>YOUR SHAPE <small>VISUAL ONLY</small></legend>
           <div class="shape-options">
@@ -110,6 +109,10 @@
           <label class="setup-select" for="avatar-tint">SIGNAL COLOR
             <select id="avatar-tint"><option value="teal">MOSS / TEAL</option><option value="amber">LAMP / AMBER</option><option value="lilac">DUSK / LILAC</option></select>
           </label>
+          <div id="avatar-preview" class="avatar-preview" role="img" aria-label="Character preview: circle in moss teal">
+            <span id="avatar-preview-glyph" class="avatar-preview-glyph" aria-hidden="true">◉</span>
+            <span><strong>YOUR SIGNAL</strong><small id="avatar-preview-copy">CIRCLE / MOSS</small></span>
+          </div>
         </fieldset>
         <fieldset>
           <legend>ACCESSIBILITY</legend>
