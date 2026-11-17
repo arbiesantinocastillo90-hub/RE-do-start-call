@@ -137,7 +137,7 @@ test('360px touch: visible warning symbols, silent hidden trace and no overflow'
     // or an optional MEMORY TRACE reveal. Icons are decorative for screen readers.
     const legend = page.getByRole('group', { name: 'Board symbols and lingering-mark ownership' });
     const legendMarkers = await legend.locator('span').evaluateAll(items => items.map(item => ({
-      text: item.textContent.replace(/\\s+/g, ' ').trim(),
+      text: item.textContent.replace(/\s+/g, ' ').trim(),
       glyph: item.querySelector('b')?.textContent ?? null
     })));
     expect(legendMarkers).toEqual([
