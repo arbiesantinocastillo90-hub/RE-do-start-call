@@ -36,9 +36,11 @@
           <div class="corner corner-tl" aria-hidden="true"></div><div class="corner corner-br" aria-hidden="true"></div>
           <div id="board" class="board" role="group" tabindex="-1" aria-label="6 by 6 tactical board. Arrow keys move. After moving, arrow keys focus a target and Enter attacks."></div>
         </div>
-        <div class="board-legend" aria-label="Board symbols">
-          <span><i class="leg-player"></i>YOU</span><span><i class="leg-enemy"></i>MEMORY</span>
-          <span><i class="leg-warn"></i>THREAT</span><span><i class="leg-hazard"></i>LINGERING</span>
+        <div class="board-legend" role="group" aria-label="Board symbols and lingering-mark ownership">
+          <span><i class="leg-player" aria-hidden="true"></i>YOU</span><span><i class="leg-enemy" aria-hidden="true"></i>MEMORY</span>
+          <span><i class="leg-warn" aria-hidden="true"></i><b aria-hidden="true">!</b> THREAT</span>
+          <span><i class="leg-hazard" aria-hidden="true"></i><b aria-hidden="true">▒</b> ENEMY MARK</span>
+          <span><b aria-hidden="true">∙</b> YOUR MARK</span>
         </div>
         <section class="clue-zone" id="clue-zone" aria-label="Optional memory notes">
           <button type="button" id="clue-trigger" class="clue-trigger" aria-expanded="false" aria-controls="clue-panel">

@@ -133,6 +133,21 @@ test('360px touch: visible warning symbols, silent hidden trace and no overflow'
     await expect(page.locator('#modal')).toBeHidden();
     await expect(page.locator('.cell')).toHaveCount(36);
     await expect(page.locator('.cell.telegraph')).toHaveCount(6);
+    // Agent C: the 360px legend must identify both trace owners without color
+    // or an optional MEMORY TRACE reveal. Icons are decorative for screen readers.
+    const legend = page.getByRole('group', { name: 'Board symbols and lingering-mark ownership' });
+    const legendMarkers = await legend.locator('span').evaluateAll(items => items.map(item => ({
+      text: item.textContent.replace(/\s+/g, ' ').trim(),
+      glyph: item.querySelector('b')?.textContent ?? null
+    })));
+    expect(legendMarkers).toEqual([
+      { text: 'YOU', glyph: null },
+      { text: 'MEMORY', glyph: null },
+      { text: '! THREAT', glyph: '!' },
+      { text: '▒ ENEMY MARK', glyph: '▒' },
+      { text: '∙ YOUR MARK', glyph: '∙' }
+    ]);
+    expect(await legend.evaluate(el => el.getBoundingClientRect().right)).toBeLessThanOrEqual(361);
     await expect(page.locator('#clue-panel')).toBeHidden();
     const warningCues = await page.locator('.cell.telegraph').evaluateAll(elements =>
       elements.map(cell => ({
@@ -155,6 +170,9 @@ test('360px touch: visible warning symbols, silent hidden trace and no overflow'
     await page.locator('[data-attack="Burst"]').tap();
     await page.locator('.cell[data-x="3"][data-y="1"]').tap();
     expect(await page.evaluate(() => window.__redo.game.phase)).toBe('TELL');
+    // Actual lingering tiles retain the exact non-color glyphs explained by the legend.
+    expect(await page.locator('.cell.danger-ground .symbol').allTextContents()).toContain('▒');
+    expect(await page.locator('.cell.player-ground .symbol').allTextContents()).toContain('∙');
     size = await width();
     expect(size.content).toBeLessThanOrEqual(size.viewport + 1);
     await page.screenshot({ path: 'quiet-ui-360.png', fullPage: true });
