@@ -682,6 +682,9 @@ func _build_setup() -> void:
     start_button.custom_minimum_size.y = 50
     start_button.pressed.connect(_begin_from_setup)
     choices.add_child(start_button)
+    # Keep keyboard focus within the pre-game overlay when Tab wraps.
+    setup_shape.focus_previous = setup_shape.get_path_to(start_button)
+    start_button.focus_next = start_button.get_path_to(setup_shape)
 
 func _open_setup() -> void:
     phase_generation += 1 # Invalidates an active asynchronous tell.
