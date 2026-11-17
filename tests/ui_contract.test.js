@@ -25,7 +25,7 @@ assert.match(html, /id="clue-trigger"[^>]*aria-expanded="false"[^>]*aria-control
 assert.match(app, /clueTrigger\.setAttribute\('aria-expanded', String\(open\)\)/);
 assert.match(app, /cluePanel\.hidden = !open/);
 assert.match(html, /role="dialog" aria-modal="true"/);
-for (const id of ['setup-options', 'avatar-tint', 'slow-tells', 'persist-tells', 'effect-scanlines', 'effect-pulse']) {
+for (const id of ['setup-options', 'avatar-tint', 'avatar-preview', 'slow-tells', 'persist-tells', 'effect-scanlines', 'effect-pulse']) {
   assert.match(html, new RegExp('id="' + id + '"'), 'missing pregame choice ' + id);
 }
 assert.match(html, /name="avatar-shape" value="circle"/);
