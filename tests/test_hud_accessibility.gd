@@ -34,6 +34,16 @@ func _run() -> void:
     await create_timer(1.10).timeout
     _check(game.get("phase") == "MOVE", "Tell ends before movement")
     _check(not tile.tooltip_text.contains("enemy strike"), "Hidden warning is not spoiled by tooltip")
+    # A single tile can hold both owners' effects. Neither may be identified by color alone.
+    var marked_cell := Vector2i(0, 0)
+    var marked_tile: Button = tiles[0]
+    game.call("_add_ground", marked_cell, "rust", "enemy", 2, 1)
+    game.call("_add_ground", marked_cell, "burn", "player", 2, 1)
+    game.call("_refresh")
+    _check(marked_tile.text.contains("▒"), "Enemy residue has a visible non-color symbol")
+    _check(marked_tile.text.contains("∙"), "Own residue stays visible on an overlapping tile")
+    _check(marked_tile.tooltip_text.contains("enemy rust lingering tile"), "Enemy residue ownership and kind are named")
+    _check(marked_tile.tooltip_text.contains("your burn lingering tile"), "Own residue ownership and kind are named")
     game.set("retain_warnings", true)
     game.call("_refresh")
     _check(tile.tooltip_text.contains("retained warning"), "Opt-in retained warning has non-color text")
