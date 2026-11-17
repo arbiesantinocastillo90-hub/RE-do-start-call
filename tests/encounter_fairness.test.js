@@ -282,3 +282,61 @@ for (const owned of reachablePairs) for (let r = 0; r < ROOMS.length; r++) {
 }
 console.log('PASS: ' + reachablePairs.length + ' reachable modifier pairs across ' +
   pairCases + ' strike/status resolution positions in all 12 patterns.');
+
+
+/*
+ * End-to-end Flinch resolution matrix (not just flinchEscape() lookup).
+ * PR #29 checks the hazard predicate in both engines, but did not run the
+ * actual strike/status checkpoint with an immune escape or no escape.
+ * Exercise each of the 12 precommitted patterns at every threatened player
+ * tile. An echo-marked exit is safe only with Numb; drips still block Flinch.
+ * The blocked case takes ONLY the preannounced direct strike and leaves
+ * Flinch available for a future round, without stalling the turn.
+ */
+let flinchResolutionCases = 0;
+const flinchDirections = [p(0, -1), p(1, 0), p(0, 1), p(-1, 0)];
+for (let r = 0; r < ROOMS.length; r++) for (let t = 0; t < 4; t++) {
+  const warned = new Set(patternFor(r, t).cells.map(id));
+  for (const threatened of patternFor(r, t).cells) {
+    if (id(threatened) === id(ROOMS[r].pos)) continue;
+    const exits = flinchDirections.map(d => p(threatened.x + d.x, threatened.y + d.y))
+      .filter(c => inside(c) && id(c) !== id(ROOMS[r].pos) && !warned.has(id(c)));
+    assert.ok(exits.length > 0, 'warned tile has no adjacent direct-strike escape: ' +
+      r + '/' + t + '/' + id(threatened));
+    for (const scenario of ['numb-echo', 'plain-echo', 'numb-drip']) {
+      const s = silent();
+      s.owned = scenario === 'plain-echo' ? ['flinch'] : ['flinch', 'numb'];
+      s.startRoom(r);
+      s.enemyHp = 100; // Check the strike checkpoint without clearing a room.
+      s.turn = t;
+      s.announceTell();
+      assert.deepEqual([...s.warningIds].sort(), [...warned].sort());
+      s.player = threatened;
+      const blocked = scenario === 'numb-drip' ? exits : [exits[0]];
+      for (const cell of blocked) s.addStatus(cell,
+        scenario === 'numb-drip' ? 'drip' : 'echo', 'enemy', 2,
+        scenario === 'numb-drip' ? 0 : 1);
+      const escape = scenario === 'numb-echo' ? exits[0] :
+        scenario === 'plain-echo' ? (exits[1] || null) : null;
+      s.finishTell();
+      assert.equal(s.hold(), true);
+      const attackTarget = legal(threatened, s.enemy)
+        .find(cell => id(cell) !== id(threatened));
+      assert.ok(attackTarget);
+      assert.equal(s.attackAt(attackTarget), true);
+      assert.equal(id(s.player), id(escape || threatened),
+        'Flinch escape/hold mismatched warned footprint in ' + scenario +
+        ' at ' + r + '/' + t + '/' + id(threatened));
+      assert.equal(s.hp, 14 - (escape ? 0 : ROOMS[r].damage),
+        'only the saved direct strike may damage the player in ' + scenario);
+      assert.equal(s.flinchReady, !escape,
+        'Flinch charge is spent only for a successful sidestep');
+      assert.equal(s.phase, 'TELL', 'Flinch cannot stall enemy resolution');
+      assert.equal(s.turn, t + 1, 'Flinch resolves exactly one turn');
+      flinchResolutionCases++;
+    }
+  }
+}
+console.log('PASS: ' + flinchResolutionCases +
+  ' full Flinch strike resolutions over all 12 warned patterns (Numb/echo, ' +
+  'plain echo, and Numb/drip); blocked escapes stay warned and actionable.');
