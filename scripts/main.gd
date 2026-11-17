@@ -108,7 +108,8 @@ func _announce_tell() -> void:
         duration -= 0.18
     duration = maxf(duration, 0.30)
     if longer_tells:
-        duration = maxf(2.5, duration * 1.8)
+        # A 3-second baseline preserves both +/- time modifiers and remains readable.
+        duration = maxf(2.5, 3.0 + (0.45 if owned.has("hyper") else 0.0) - (0.18 if owned.has("tunnel") else 0.0))
     tell_duration = duration
     _log("STATIC: %s. Watch the threatened squares." % str(attack_info["name"]))
     _refresh()
@@ -568,7 +569,7 @@ func _refresh() -> void:
             instructions_label.text = "Watch the amber danger tiles for %.2f seconds. %s" % [tell_duration, "Outlines will remain." if retain_warnings else "The flash disappears before movement."]
         "MOVE":
             phase_label.text = "[ HYPERVIGILANCE / MOVE ]"
-            instructions_label.text = "Step one square up, down, left or right. Hold with SPACE. Remember the attack before choosing."
+            instructions_label.text = "Step one cardinal tile, or hold with SPACE. " + ("Amber outlines show the next strike." if retain_warnings else "Remember the danger flash.")
         "ATTACK":
             phase_label.text = "[ FIGHT / ATTACK ]"
             instructions_label.text = "Choose JAB, SWEEP or BURST. Arrows aim; Enter or click attacks. White outlines preview your attack shape."
