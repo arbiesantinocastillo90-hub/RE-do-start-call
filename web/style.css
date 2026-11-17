@@ -23,3 +23,133 @@
 .cell.enemy:not(.telegraph) .coord{color:#fff1f6}
 .card-heading{font-size:11px}
 .instruction{font-size:13px}
+
+
+/* Agent C: quiet live interface. Optional tactical text never occupies the right rail. */
+:root{--avatar-fill:#79baaa}
+.cell.you{background:var(--avatar-fill)!important}
+.cell.you.telegraph{background:#e5a35b!important}
+.cell .symbol{font-size:clamp(20px,2.1vw,26px)}
+.clue-zone{margin:12px 0 6px;max-width:540px;position:relative}
+.clue-trigger{display:inline-flex;gap:9px;align-items:center;padding:8px 11px;background:transparent;border:1px solid #58657782;color:#a6b1bd;font-size:11px;letter-spacing:.12em;min-height:40px}
+.clue-trigger>span{font-size:18px;color:var(--warm)}
+.clue-trigger small{font-size:9px;color:#9facbc;letter-spacing:.03em}
+.clue-trigger:hover,.clue-trigger:focus-visible,.clue-trigger[aria-expanded="true"]{background:#202d3e;border-color:#91bcb2;color:#ecf4f1}
+.clue-panel{margin-top:9px;padding:17px 18px;border:1px solid #526479;background:linear-gradient(145deg,#1a2734,#101a29);box-shadow:0 16px 30px #0004;max-height:38vh;overflow:auto}
+.clue-panel[hidden],.setup-options[hidden]{display:none}
+.clue-panel h3{margin:0 0 10px;font-size:12px;letter-spacing:.14em;color:#d7e5de}
+.clue-panel h3 small{display:block;font-size:9px;letter-spacing:.05em;color:#b9a78e;font-weight:400;margin-top:3px}
+.clue-hint,.clue-instruction{color:#d3c6b7;font-size:12px;margin:6px 0 10px;line-height:1.65}
+.clue-narrative{border-left:2px solid #8bbcaf;margin:12px 0;padding:4px 0 4px 12px;color:#b3c2c7;font-size:12px;font-style:italic}
+.clue-panel .log-items{min-height:0;border-top:1px solid #40546a;margin-top:13px;padding-top:13px}
+.clue-panel .log-items li{font-size:11px}
+.clue-panel .keyboard-hint{margin-top:13px;padding-top:12px;border-top:1px solid #35495c;color:#b3c4d1;font-size:11px}
+.health-grid{margin:13px 0 2px}
+.control-card{padding:18px}
+.move-row{display:flex;align-items:center;gap:15px}
+.move-pad{display:grid;grid-template-columns:repeat(3,40px);grid-template-rows:repeat(2,40px);gap:4px;flex:none}
+.step-btn{border:1px solid #546879;background:#263749;color:#ecf4f2;font-size:20px;min-width:40px;min-height:40px;line-height:1}
+.step-btn[data-step="up"]{grid-column:2;grid-row:1}
+.step-btn[data-step="left"]{grid-column:1;grid-row:2}
+.step-btn[data-step="down"]{grid-column:2;grid-row:2}
+.step-btn[data-step="right"]{grid-column:3;grid-row:2}
+.move-row .secondary-btn{flex:1;min-width:0;min-height:48px;gap:10px}
+.attack-heading{margin-top:22px}
+.mod-list{min-height:23px}
+.mast-action{background:#1a2734;border:1px solid #657d8a;color:#c9e0d9;padding:7px 10px;white-space:nowrap;font-size:10px;letter-spacing:.07em;min-height:36px}
+.mast-action:hover{background:#263b4a}
+.setup-options{display:grid;gap:14px;margin:18px 0 21px}
+.setup-options fieldset{margin:0;min-width:0;border:1px solid #5b6c7c;background:#121e2d;padding:12px 15px 15px}
+.setup-options legend{padding:0 7px;font-size:11px;letter-spacing:.13em;color:#bbd7cf;font-weight:700}
+.setup-options legend small{font-size:9px;color:#aeb8c7;font-weight:400}
+.shape-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.shape-options label{position:relative;min-width:0}
+.shape-options label>input{position:absolute;left:12px;top:12px}
+.shape-options label>span{display:flex;flex-direction:column;align-items:center;gap:3px;background:#253344;border:1px solid #52677c;color:#dce5e6;padding:8px 3px 7px;font-size:23px;cursor:pointer}
+.shape-options label>span small{font-size:10px;letter-spacing:.08em}
+.shape-options input:checked+span{border-color:#b6d9c9;background:#315453;box-shadow:inset 0 0 0 1px #a2c6b8}
+.shape-options input:focus-visible+span{outline:2px solid #a8e3d7;outline-offset:2px}
+.setup-select{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:15px;font-size:11px;letter-spacing:.08em;color:#becfd3}
+.setup-select select{max-width:65%;background:#233548;color:#eaf1f2;border:1px solid #7b96a1;padding:7px 9px;min-height:38px}
+.setup-check{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin-top:10px;color:#d5e0e2;font-size:11px;cursor:pointer;min-height:27px}
+.setup-check small{color:#9caab8;font-size:10px}
+.setup-check input{width:17px;height:17px;accent-color:#9ad0c1}
+.no-scanlines .scanlines{display:none}
+.no-pulse .cell.telegraph{animation:none}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;clip-path:inset(50%)}
+@media(max-width:1050px){
+  .layout{max-width:720px}
+  .clue-zone{max-width:540px;margin-left:auto;margin-right:auto}
+}
+@media(max-width:700px){
+  .masthead{align-items:start;flex-wrap:wrap;gap:12px}
+  .top-meta{flex-wrap:wrap}
+  .top-meta .status-led,.top-meta>span:not(.version){display:none}
+  .move-row{gap:10px}
+  .room-line{font-size:13px}
+}
+@media(max-width:560px){
+  .top-meta{display:flex}
+  .mast-action{font-size:10px}
+  .move-pad{grid-template-columns:repeat(3,42px);grid-template-rows:repeat(2,42px)}
+  .step-btn{min-width:42px;min-height:42px}
+  .clue-trigger small{font-size:8px}
+  .modal-panel{padding:22px 17px}
+  .shape-options{gap:5px}
+  .setup-options fieldset{padding:10px 11px}
+  .setup-select{align-items:stretch;flex-direction:column}
+  .setup-select select{max-width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+  .cell.telegraph{animation:none!important}
+  .scanlines{display:none}
+  button,.cell{transition:none!important}
+}
+
+
+/* Agent F: pre-game release menu and preference accessibility. No in-game effects added here. */
+.modal-panel h2{overflow-wrap:anywhere;font-size:clamp(23px,3.1vw,37px)}
+.avatar-preview{display:flex;align-items:center;gap:15px;padding:9px 13px;margin-top:12px;background:#101b27;border:1px solid #485d6e}
+.avatar-preview-glyph{display:grid;place-items:center;width:42px;height:42px;border:1px solid #657684;background:#263548;font-size:25px;color:var(--avatar-fill)}
+.avatar-preview strong,.avatar-preview small{display:block;font-size:10px;letter-spacing:.11em;color:#d4e1df}
+.avatar-preview small{margin-top:3px;color:#b9c7d1}
+.setup-test-btn{display:block;width:100%;text-align:center;margin-top:12px;background:#263c44;border:1px solid #85a39b;color:#e3f3ee;min-height:42px;font-size:11px;letter-spacing:.08em}
+.setup-test-btn:disabled{opacity:.55;cursor:not-allowed}
+.setup-controls p{margin:10px 0 0;font-size:11px;color:#cbd9df;line-height:1.75}
+.setup-controls kbd{display:inline-block;border:1px solid #728e9a;background:#253746;padding:1px 5px;color:#fff;border-radius:2px;font:inherit}
+.high-contrast{--muted:#c2d4df;--line:#849eb2;--teal:#c0f7ee;--text:#f8fcff}
+.high-contrast .top-card,.high-contrast .control-card,.high-contrast .coping-card,.high-contrast .clue-panel{border-color:#a6bbc9}
+.high-contrast .cell{border-color:#849eae}
+.high-contrast .cell.ghost{box-shadow:inset 0 0 0 4px #ffe2a6}
+.high-contrast .step-btn,.high-contrast .attack-choice{border-color:#94b3c2}
+.user-reduced-motion .scanlines{display:none!important}
+.user-reduced-motion .cell.telegraph{animation:none!important}
+.user-reduced-motion .cell,.user-reduced-motion button,.user-reduced-motion .health-fill{transition:none!important}
+@media(max-width:560px){
+  .avatar-preview{padding:9px 11px}
+  .avatar-preview-glyph{width:38px;height:38px;font-size:23px}
+  .setup-controls p{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){
+  .health-fill{transition:none!important}
+}
+@media(forced-colors:active){
+  .cell.telegraph{outline:3px solid Highlight;outline-offset:-3px}
+  .cell.you{outline:3px solid CanvasText;outline-offset:-4px}
+}
+
+
+/* Compact, scroll-safe release setup. Start remains reachable on 800px laptops. */
+.modal-backdrop[data-view="setup"] .modal-panel{padding:19px 30px;max-height:calc(100dvh - 24px)}
+.modal-backdrop[data-view="setup"] .modal-panel h2{font-size:30px;margin:9px 0 8px}
+.modal-backdrop[data-view="setup"] .modal-panel p{line-height:1.5;margin-bottom:7px}
+.modal-backdrop[data-view="setup"] .setup-options{gap:8px;margin:10px 0 11px}
+.modal-backdrop[data-view="setup"] .setup-options fieldset{padding:7px 11px 9px}
+.modal-backdrop[data-view="setup"] .shape-options label>span{padding:5px 3px;font-size:20px}
+.modal-backdrop[data-view="setup"] .avatar-preview{margin-top:7px;padding:6px 10px}
+.modal-backdrop[data-view="setup"] .avatar-preview-glyph{width:36px;height:36px;font-size:22px}
+.modal-backdrop[data-view="setup"] .setup-select{margin-top:9px}
+.modal-backdrop[data-view="setup"] .setup-check{margin-top:4px;min-height:23px}
+.modal-backdrop[data-view="setup"] .modal-footer{margin-top:8px}
+.modal-backdrop[data-view="setup"] #modal-primary{position:sticky;bottom:0;z-index:2;box-shadow:0 -8px 24px #101b27b8}
+@media(max-width:560px){.modal-backdrop[data-view="setup"] .modal-panel{padding:18px 15px}}
