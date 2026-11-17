@@ -1,0 +1,44 @@
+name: Verify native Godot gameplay
+on:
+  push:
+    paths:
+      - 'scripts/**'
+      - 'scenes/**'
+      - 'tests/*.gd'
+      - 'project.godot'
+      - '.github/workflows/godot-native.yml'
+  pull_request:
+    paths:
+      - 'scripts/**'
+      - 'scenes/**'
+      - 'tests/*.gd'
+      - 'project.godot'
+      - '.github/workflows/godot-native.yml'
+
+jobs:
+  native-godot-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot 4.4.1 (official Linux binary)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 --output godot.zip \
+            https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip
+          echo "d6e382fb531019f85630c1f485a561a0d20c4a2344b6c3847735cfee7da812aa  godot.zip" | sha256sum --check
+          unzip -q godot.zip
+          sudo install -m 755 Godot_v4.4.1-stable_linux.x86_64 /usr/local/bin/godot
+          godot --version
+      - name: Import project and parse scripts
+        run: godot --headless --path . --editor --quit
+      - name: Strict script parse checks (fail fast)
+        run: |
+          godot --headless --path . --check-only --script res://scripts/attack_patterns.gd
+          godot --headless --path . --check-only --script res://scripts/main.gd
+          godot --headless --path . --check-only --script res://tests/test_turn_flow.gd
+      - name: Geometry and telegraph patterns
+        run: timeout 30s godot --headless --path . --script res://tests/test_geometry.gd
+      - name: Turn locking, keyboard and restart regression suite
+        run: timeout 30s godot --headless --path . --script res://tests/test_turn_flow.gd
