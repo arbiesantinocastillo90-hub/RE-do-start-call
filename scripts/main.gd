@@ -313,7 +313,12 @@ func _is_harmful_tile(cell: Vector2i) -> bool:
     if not ground.has(cell):
         return false
     for e in ground[cell]:
-        if e["source"] == "enemy" or (e["source"] == "player" and owned.has("fight")):
+        var kind: String = str(e["kind"])
+        if e["source"] == "enemy":
+            # Numb prevents rust/echo damage, but drip still causes Slow.
+            if kind == "drip" or not owned.has("numb"):
+                return true
+        elif owned.has("fight") and not owned.has("numb") and kind != "drip":
             return true
     return false
 
