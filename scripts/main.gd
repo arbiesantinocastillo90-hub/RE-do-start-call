@@ -789,7 +789,8 @@ func _refresh() -> void:
             if retain_warnings and (phase == "MOVE" or phase == "ATTACK") and warned.has(cell):
                 text += (" !" if text != "" else "!")
             button.text = text
-            button.disabled = phase != "MOVE" and phase != "ATTACK"
+            # Live warning tiles are focusable; _tile_pressed still enforces the TELL phase lock.
+            button.disabled = not (phase == "TELL" or phase == "MOVE" or phase == "ATTACK")
             var tile_description := "Tile %s%d" % ["ABCDEF".substr(x, 1), y + 1]
             if cell == player:
                 tile_description += ": you"
@@ -797,7 +798,12 @@ func _refresh() -> void:
                 tile_description += ": " + str(room["enemy"])
             else:
                 tile_description += ": empty"
-            # Keep tooltip text neutral. Tactical hints belong behind MEMORY TRACE.
+            # Visible danger is essential game state, not an optional memory hint.
+            # When the tell hides, warnings stop being exposed unless outlines were opted into.
+            if warned.has(cell) and phase == "TELL" and tell_visible:
+                tile_description += "; warning: imminent enemy strike"
+            elif warned.has(cell) and retain_warnings and (phase == "MOVE" or phase == "ATTACK"):
+                tile_description += "; retained warning: next enemy strike"
             button.tooltip_text = tile_description
             var ink := Color("#101827") if cell == player or paint == Color("#e8a45d") else Color("#f8f8ff")
             button.add_theme_color_override("font_color", ink)
