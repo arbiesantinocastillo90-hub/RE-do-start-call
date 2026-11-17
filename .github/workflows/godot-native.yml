@@ -38,7 +38,10 @@ jobs:
           godot --headless --path . --check-only --script res://scripts/attack_patterns.gd
           godot --headless --path . --check-only --script res://scripts/main.gd
           godot --headless --path . --check-only --script res://tests/test_turn_flow.gd
+          godot --headless --path . --check-only --script res://tests/test_hud_accessibility.gd
       - name: Geometry and telegraph patterns
         run: timeout 30s godot --headless --path . --script res://tests/test_geometry.gd
       - name: Turn locking, keyboard and restart regression suite
         run: timeout 30s godot --headless --path . --script res://tests/test_turn_flow.gd
+      - name: Agent C keyboard-focus and non-color warnings
+        run: timeout 30s godot --headless --path . --script res://tests/test_hud_accessibility.gd
