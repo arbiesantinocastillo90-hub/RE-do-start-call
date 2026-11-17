@@ -22,7 +22,7 @@
   const unique = a => [...new Map(a.map(c => [id(c), c])).values()];
 
   function cellsFor(attack, origin, target) {
-    if (!inside(target) || same(target, origin)) return [];
+    if (!inside(origin) || !inside(target) || same(target, origin)) return [];
     const delta = p(target.x - origin.x, target.y - origin.y);
     if (attack === 'Jab') return distance(origin, target) === 1 ? [target] : [];
     if (attack === 'Sweep') {
@@ -275,7 +275,10 @@
         this.phase = 'WIN'; this.endTitle = 'THE SOUND STOPS'; this.notify(); return;
       }
       this.phase = 'REWARD';
-      const pool = MODS.filter(m => !this.owned.includes(m.id));
+      // Numb forbids healing, so offering Comfort with Numb (or vice versa) creates an inert reward.
+      const pool = MODS.filter(m => !this.owned.includes(m.id)
+        && !(this.has('numb') && m.id === 'comfort')
+        && !(this.has('comfort') && m.id === 'numb'));
       this.rewardOptions = [];
       while (this.rewardOptions.length < 3 && pool.length) {
         const i = Math.min(pool.length - 1, Math.floor(this.rng() * pool.length));
