@@ -689,6 +689,13 @@ func _input(event: InputEvent) -> void:
         return
     if key.ctrl_pressed or key.alt_pressed or key.meta_pressed:
         return
+    # Preserve Space activation for focused HUD controls (including settings).
+    # Enter remains the explicit attack-aim key during ATTACK.
+    var focused := get_viewport().gui_get_focus_owner()
+    if focused is LineEdit or focused is TextEdit:
+        return
+    if key.keycode == KEY_SPACE and focused is BaseButton and not tiles.has(focused):
+        return
 
     var handled := true
     match key.keycode:
