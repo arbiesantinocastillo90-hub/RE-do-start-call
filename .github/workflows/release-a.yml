@@ -28,6 +28,7 @@ jobs:
           set -euo pipefail
           node --check web/engine.js
           node --check web/app.js
+          node --check web/effects.js
           if [ -f web/preferences.js ]; then node --check web/preferences.js; fi
       - name: Deterministic baseline and integrated UI unit tests
         shell: bash
@@ -35,6 +36,8 @@ jobs:
           set -euo pipefail
           node tests/engine.test.js
           node tests/autoplay.test.js
+          node tests/encounter_fairness.test.js
+          node tests/effects.test.js
           for spec in tests/ui_contract.test.js tests/preferences.test.js; do
             if [ -f "$spec" ]; then node "$spec"; fi
           done
@@ -75,12 +78,14 @@ jobs:
             exit 1
           fi
           timeout 35s godot --headless --path . --check-only --script res://tests/test_turn_flow.gd
+          if [ -f tests/test_hud_accessibility.gd ]; then timeout 35s godot --headless --path . --check-only --script res://tests/test_hud_accessibility.gd; fi
       - name: Geometry, telegraphs, input locks, restart and rewards
         shell: bash
         run: |
           set -euo pipefail
           timeout 45s godot --headless --path . --script res://tests/test_geometry.gd
           timeout 45s godot --headless --path . --script res://tests/test_turn_flow.gd
+          if [ -f tests/test_hud_accessibility.gd ]; then timeout 45s godot --headless --path . --script res://tests/test_hud_accessibility.gd; fi
 
   browser-chromium:
     name: Chromium keyboard, touch, 360px and reduced motion
@@ -100,7 +105,7 @@ jobs:
         run: |
           set -euo pipefail
           specs=(tests/release_browser.spec.cjs)
-          for f in tests/ui_browser.spec.cjs tests/setup_browser.spec.cjs; do
+          for f in tests/ui_browser.spec.cjs tests/setup_browser.spec.cjs tests/effects_browser.spec.cjs; do
             if [ -f "$f" ]; then specs+=("$f"); fi
           done
           npx playwright test "${specs[@]}" --workers=1 --reporter=line
