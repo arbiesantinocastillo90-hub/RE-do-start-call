@@ -25,6 +25,7 @@ jobs:
           path: |
             quiet-ui-setup.png
             quiet-ui-mobile.png
+            quiet-ui-360.png
             release-setup-desktop.png
             release-setup-mobile.png
             test-results/
