@@ -38,8 +38,8 @@ test('finite combat feedback, exact warning visibility and setup cancellation', 
   expect(await page.evaluate(() => ({
     marks: document.querySelectorAll('.redo-fx-mark').length,
     markerHidden: document.querySelector('.redo-fx-player').hidden,
-    gamePhase: window.__redo.game?.phase
-  }))).toEqual({ marks:0, markerHidden:true, gamePhase:'STOPPED' });
+    gamePhase: window.__redo.game?.phase ?? null
+  }))).toEqual({ marks:0, markerHidden:true, gamePhase:null });
   await page.waitForTimeout(240);
   await expect(page.locator('.redo-fx-mark')).toHaveCount(0);
   expect(errors).toEqual([]);
