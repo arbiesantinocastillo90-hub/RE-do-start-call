@@ -768,9 +768,17 @@ func _refresh() -> void:
             var paint := Color("#253248") if (x+y)%2==0 else Color("#303d54")
             var text := ""
             if ground.has(cell):
-                var last: Dictionary = ground[cell][ground[cell].size() - 1]
-                paint = Color("#704745") if last["source"] == "enemy" else Color("#405e65")
-                text = "."
+                # Lingering effects stay visible even without color perception.
+                # Preserve both ownership cues when opposite marks overlap.
+                var enemy_mark := false
+                var player_mark := false
+                for mark in ground[cell]:
+                    if mark["source"] == "enemy":
+                        enemy_mark = true
+                    elif mark["source"] == "player":
+                        player_mark = true
+                paint = Color("#704745") if enemy_mark else Color("#405e65")
+                text = ("▒" if enemy_mark else "") + ("∙" if player_mark else "")
             if phase == "TELL" and tell_visible and warned.has(cell):
                 paint = Color("#e8a45d")
                 text = "!"
@@ -789,7 +797,8 @@ func _refresh() -> void:
             if retain_warnings and (phase == "MOVE" or phase == "ATTACK") and warned.has(cell):
                 text += (" !" if text != "" else "!")
             button.text = text
-            button.disabled = phase != "MOVE" and phase != "ATTACK"
+            # Live warning tiles are focusable; _tile_pressed still enforces the TELL phase lock.
+            button.disabled = not (phase == "TELL" or phase == "MOVE" or phase == "ATTACK")
             var tile_description := "Tile %s%d" % ["ABCDEF".substr(x, 1), y + 1]
             if cell == player:
                 tile_description += ": you"
@@ -797,7 +806,17 @@ func _refresh() -> void:
                 tile_description += ": " + str(room["enemy"])
             else:
                 tile_description += ": empty"
-            # Keep tooltip text neutral. Tactical hints belong behind MEMORY TRACE.
+            if ground.has(cell):
+                for mark in ground[cell]:
+                    tile_description += "; %s %s lingering tile" % [
+                        "enemy" if mark["source"] == "enemy" else "your", str(mark["kind"])
+                    ]
+            # Visible danger is essential game state, not an optional memory hint.
+            # When the tell hides, warnings stop being exposed unless outlines were opted into.
+            if warned.has(cell) and phase == "TELL" and tell_visible:
+                tile_description += "; warning: imminent enemy strike"
+            elif warned.has(cell) and retain_warnings and (phase == "MOVE" or phase == "ATTACK"):
+                tile_description += "; retained warning: next enemy strike"
             button.tooltip_text = tile_description
             var ink := Color("#101827") if cell == player or paint == Color("#e8a45d") else Color("#f8f8ff")
             button.add_theme_color_override("font_color", ink)

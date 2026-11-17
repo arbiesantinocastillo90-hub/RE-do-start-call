@@ -108,3 +108,56 @@ test('mobile layout, reduced motion and optional notes remain accessible', async
   await expect(page.locator('#clue-panel')).toBeHidden();
   await page.screenshot({ path: 'quiet-ui-mobile.png', fullPage: true });
 });
+
+test('360px touch: visible warning symbols, silent hidden trace and no overflow', async ({ browser }) => {
+  const context = await browser.newContext({
+    isMobile: true, hasTouch: true, viewport: { width: 360, height: 740 }
+  });
+  const page = await context.newPage();
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  const width = () => page.evaluate(() => ({
+    content: document.documentElement.scrollWidth,
+    viewport: document.documentElement.clientWidth
+  }));
+  try {
+    await page.goto(gameUrl);
+    await expect(page.locator('#setup-options')).toBeVisible();
+    await page.locator('#slow-tells').check();
+    await page.locator('#persist-tells').check();
+    let size = await width();
+    expect(size.content).toBeLessThanOrEqual(size.viewport + 1);
+    await page.locator('#modal-primary').tap();
+    await expect(page.locator('#modal')).toBeHidden();
+    await expect(page.locator('.cell')).toHaveCount(36);
+    await expect(page.locator('.cell.telegraph')).toHaveCount(6);
+    await expect(page.locator('#clue-panel')).toBeHidden();
+    const warningCues = await page.locator('.cell.telegraph').evaluateAll(elements =>
+      elements.map(cell => ({
+        label: cell.getAttribute('aria-label'),
+        visible: cell.querySelector('.symbol').textContent,
+        occupancy: cell.classList.contains('you') || cell.classList.contains('enemy'),
+        overlay: getComputedStyle(cell, '::after').content
+      }))
+    );
+    for (const cue of warningCues) {
+      expect(cue.label).toContain('next enemy strike');
+      // Occupied tiles use a separate ! overlay, not a warning color alone.
+      expect(cue.occupancy ? cue.overlay.includes('!') : cue.visible.includes('!')).toBe(true);
+    }
+    await page.evaluate(() => window.__redo.game.finishTell());
+    await expect(page.locator('.cell.ghost')).toHaveCount(6);
+    await expect(page.locator('#clue-panel')).toBeHidden();
+    await page.locator('[data-step="up"]').tap();
+    expect(await page.evaluate(() => window.__redo.game.phase)).toBe('ATTACK');
+    await page.locator('[data-attack="Burst"]').tap();
+    await page.locator('.cell[data-x="3"][data-y="1"]').tap();
+    expect(await page.evaluate(() => window.__redo.game.phase)).toBe('TELL');
+    size = await width();
+    expect(size.content).toBeLessThanOrEqual(size.viewport + 1);
+    await page.screenshot({ path: 'quiet-ui-360.png', fullPage: true });
+    expect(errors).toEqual([]);
+  } finally {
+    await context.close();
+  }
+});
