@@ -20,7 +20,7 @@ func _check(condition: bool, message: String) -> void:
         push_error("FAIL: " + message)
 
 
-func _press(game: Node, code: Key) -> void:
+func _press(game: Node, code: int) -> void:
     var event := InputEventKey.new()
     event.keycode = code
     event.pressed = true
