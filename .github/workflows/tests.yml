@@ -14,9 +14,12 @@ jobs:
         run: |
           node --check web/engine.js
           node --check web/app.js
+          node --check web/preferences.js
+          node --check tests/preferences.test.js
           node --check tests/ui_contract.test.js
       - name: Run deterministic gameplay tests
         run: |
           node tests/engine.test.js
           node tests/autoplay.test.js
           node tests/ui_contract.test.js
+          node tests/preferences.test.js
