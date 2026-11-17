@@ -453,6 +453,30 @@
   });
   $('#sound-test').addEventListener('click', playMenuTone);
 
+  // The warning timer must not expire while its cells are hidden in a
+  // background tab. Keep the engine's original precommitted warningIds:
+  // resuming the whole tell never recalculates an enemy attack pattern.
+  let obscuredTell = null;
+  document.addEventListener('visibilitychange', () => {
+    if (!game || game.phase !== 'TELL') { obscuredTell = null; return; }
+    if (document.hidden) {
+      obscuredTell = game;
+      if (game.pendingTimer != null) game.clearTimer(game.pendingTimer);
+      game.pendingTimer = null;
+      return;
+    }
+    if (obscuredTell !== game) return;
+    obscuredTell = null;
+    // A reset-confirmation dialog already replays its covered warning on
+    // cancellation; never let an invisible modal consume that replay.
+    if (!$('#modal').hidden) return;
+    const run = game;
+    const ticket = run.generation;
+    run.pendingTimer = run.timer(() => {
+      if (game === run && run.generation === ticket && run.phase === 'TELL') run.finishTell();
+    }, run.tellDuration * 1000);
+  });
+
   document.addEventListener('keydown', event => {
     if (!$('#modal').hidden) {
       if (event.key === 'Escape' && currentModal === 'reset-confirm') {
