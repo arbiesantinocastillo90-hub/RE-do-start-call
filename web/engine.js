@@ -297,6 +297,14 @@
       this.hp = 0; this.phase = 'DEAD'; this.tellVisible = false;
       this.endTitle = 'THE LOOP RESTARTS'; this.log('The house goes quiet. Another attempt remains.'); this.notify();
     }
+    // UI lifecycle only: leaving combat for pre-game setup must not fire a stale tell.
+    dispose() {
+      this.generation++;
+      if (this.pendingTimer != null) this.clearTimer(this.pendingTimer);
+      this.pendingTimer = null;
+      this.onUpdate = () => {};
+      this.phase = 'STOPPED';
+    }
     setAccessibility({ slowTells = this.slowTells, persistTells = this.persistTells }) {
       this.slowTells = slowTells; this.persistTells = persistTells; this.notify();
     }
