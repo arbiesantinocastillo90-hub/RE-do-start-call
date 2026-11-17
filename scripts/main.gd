@@ -49,6 +49,9 @@ var hold_button: Button
 var heal_button: Button
 var freeze_button: Button
 var restart_button: Button
+var reset_confirmation: ConfirmationDialog
+var reset_return_phase := ""
+var reset_focus_owner: Control
 var reward_box: VBoxContainer
 var overlay_label: Label
 var options: Array[Dictionary] = []
@@ -77,6 +80,10 @@ func _ready() -> void:
     _open_setup()
 
 func _start_run() -> void:
+    reset_return_phase = ""
+    reset_focus_owner = null
+    if reset_confirmation != null:
+        reset_confirmation.hide()
     phase_generation += 1
     clue_pinned = false
     clue_blocked = false
@@ -456,7 +463,7 @@ func _build_ui() -> void:
     restart_button = Button.new()
     restart_button.text = "↺ NEW LOOP / SETUP  [R]"
     restart_button.add_theme_font_size_override("font_size", 11)
-    restart_button.pressed.connect(_open_setup)
+    restart_button.pressed.connect(_request_setup)
     left.add_child(restart_button)
 
     subtitle_label = Label.new()
@@ -602,6 +609,17 @@ func _build_ui() -> void:
     footer.add_theme_color_override("font_color", Color("#9baac0"))
     clue_details.add_child(footer)
     _build_setup()
+    # Only this dialog may discard an active native run. Its phase gate also
+    # locks button/direct-action paths while it is visible.
+    reset_confirmation = ConfirmationDialog.new()
+    reset_confirmation.title = "Leave this loop?"
+    reset_confirmation.dialog_text = "Discard this run and return to setup? Your current room, HP and coping modifiers will be lost."
+    reset_confirmation.dialog_autowrap = true
+    reset_confirmation.ok_button_text = "DISCARD RUN"
+    reset_confirmation.cancel_button_text = "KEEP PLAYING"
+    reset_confirmation.confirmed.connect(_confirm_reset)
+    reset_confirmation.canceled.connect(_cancel_reset)
+    add_child(reset_confirmation)
 
 func _move_by(delta: Vector2i) -> void:
     if phase == "MOVE":
@@ -705,7 +723,51 @@ func _build_setup() -> void:
     setup_shape.focus_previous = setup_shape.get_path_to(start_button)
     start_button.focus_next = start_button.get_path_to(setup_shape)
 
+func _request_setup() -> void:
+    if phase == "SETUP" or phase == "RESET_CONFIRM":
+        return
+    # There is no run to lose after a terminal result.
+    if phase == "DEAD" or phase == "WIN":
+        _open_setup()
+        return
+    reset_return_phase = phase
+    reset_focus_owner = get_viewport().gui_get_focus_owner()
+    phase_generation += 1 # Cancel any tell while the confirmation covers it.
+    phase = "RESET_CONFIRM" # Existing action guards now lock every mutation path.
+    tell_visible = false
+    _refresh()
+    reset_confirmation.popup_centered(Vector2i(440, 180))
+
+
+func _cancel_reset() -> void:
+    if reset_return_phase == "":
+        return
+    var previous_phase := reset_return_phase
+    reset_return_phase = ""
+    reset_confirmation.hide()
+    if previous_phase == "TELL":
+        # Same round, same deterministic cells, fresh full warning duration.
+        # The invalidated timer cannot unlock this replay prematurely.
+        _announce_tell()
+    else:
+        phase = previous_phase
+        _refresh()
+    if is_instance_valid(reset_focus_owner):
+        reset_focus_owner.call_deferred("grab_focus")
+    reset_focus_owner = null
+
+
+func _confirm_reset() -> void:
+    if reset_return_phase == "":
+        return
+    _open_setup()
+
+
 func _open_setup() -> void:
+    reset_return_phase = ""
+    reset_focus_owner = null
+    if reset_confirmation != null:
+        reset_confirmation.hide()
     phase_generation += 1 # Invalidates an active asynchronous tell.
     phase = "SETUP"
     if reward_box != null:
@@ -757,6 +819,9 @@ func _refresh() -> void:
         "REWARD":
             phase_label.text = "[ A CHOICE / A COST ]"
             instructions_label.text = "Pick a coping mechanism to carry into the next room."
+        "RESET_CONFIRM":
+            phase_label.text = "[ PAUSED / CONFIRM RESET ]"
+            instructions_label.text = "Choose KEEP PLAYING to return to your exact turn."
         "WIN":
             phase_label.text = "[ THE SOUND STOPS ]"
             instructions_label.text = "This completes the house demo. The full story continues elsewhere."
@@ -881,7 +946,7 @@ func _input(event: InputEvent) -> void:
     if key.ctrl_pressed or key.alt_pressed or key.meta_pressed:
         return
     # A future/native pre-game setup owns all keys until PLAY is chosen.
-    if phase == "SETUP" or setup_overlay.visible:
+    if phase == "SETUP" or phase == "RESET_CONFIRM" or setup_overlay.visible:
         return
     # A focused button (including a board tile) owns Enter/Space.
     # Space only means HOLD when no button is focused; the GUI activates tiles.
@@ -894,11 +959,7 @@ func _input(event: InputEvent) -> void:
     var handled := true
     match key.keycode:
         KEY_R:
-            # C's native setup flow opens the menu; old builds restart directly.
-            if has_method("_open_setup"):
-                call("_open_setup")
-            else:
-                _start_run()
+            _request_setup()
         KEY_SPACE:
             if phase == "MOVE":
                 _hold()
