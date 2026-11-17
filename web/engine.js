@@ -80,7 +80,9 @@
   }
 
   class Game {
-    constructor({ onUpdate = () => {}, rng = Math.random, timer = setTimeout, clearTimer = clearTimeout, slowTells = false, persistTells = false } = {}) {
+    // Bind default browser timers through closures; calling detached window.setTimeout
+    // as this.timer(...) raises "Illegal invocation" in Chromium.
+    constructor({ onUpdate = () => {}, rng = Math.random, timer = (fn, ms) => setTimeout(fn, ms), clearTimer = handle => clearTimeout(handle), slowTells = false, persistTells = false } = {}) {
       this.onUpdate = onUpdate;
       this.rng = rng;
       this.timer = timer;
@@ -296,6 +298,14 @@
       if (this.pendingTimer) this.clearTimer(this.pendingTimer);
       this.hp = 0; this.phase = 'DEAD'; this.tellVisible = false;
       this.endTitle = 'THE LOOP RESTARTS'; this.log('The house goes quiet. Another attempt remains.'); this.notify();
+    }
+    // UI lifecycle only: leaving combat for pre-game setup must not fire a stale tell.
+    dispose() {
+      this.generation++;
+      if (this.pendingTimer != null) this.clearTimer(this.pendingTimer);
+      this.pendingTimer = null;
+      this.onUpdate = () => {};
+      this.phase = 'STOPPED';
     }
     setAccessibility({ slowTells = this.slowTells, persistTells = this.persistTells }) {
       this.slowTells = slowTells; this.persistTells = persistTells; this.notify();
