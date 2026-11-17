@@ -1,6 +1,6 @@
 'use strict';
 const assert = require('node:assert/strict');
-const { MS, snapshot, classify } = require('../web/effects.js');
+const { MS, snapshot, classify, endCue } = require('../web/effects.js');
 const s = (phase, x, y, hp=14, enemyHp=7, roomIndex=0, turn=0) =>
   ({phase, player:{x,y},hp,enemyHp,roomIndex,turn,warningIds:new Set(['1,2','2,2'])});
 const get = (...args) => snapshot(s(...args));
@@ -17,7 +17,13 @@ assert.deepEqual(classify(get('REWARD',2,2,5,0),get('TELL',1,4,5,10,1,0)),['room
   'new room must teleport and not flash past damage');
 assert.deepEqual(classify(get('RESOLVE',1,2),get('TELL',2,2,14,7,0,1)),['tell','move','strike'],
   'a valid Flinch movement can interpolate');
+assert.deepEqual(classify(get('RESOLVE',1,2,1,7),get('DEAD',1,2,0,7)),
+  ['player-hit','room-end'], 'loss must remain a terminal feedback event');
+assert.equal(endCue('REWARD'), 'reward', 'only a cleared room earns the reward cue');
+assert.equal(endCue('WIN'), 'win', 'demo completion must sound distinct from a boon');
+assert.equal(endCue('DEAD'), 'defeat', 'a loss must never sound like a reward');
+assert.equal(endCue('TELL'), null, 'nonterminal turns must not add an ending tone');
 assert.equal(MS.move,170);
 for (const key of ['attack','impact','strike']) assert.ok(MS[key]>=100 && MS[key]<=180);
 assert.ok(MS.room>=200 && MS.room<=350);
-console.log('PASS Agent E effects: 11 deterministic events/timings; combat engine untouched');
+console.log('PASS Agent E effects: 16 deterministic events/timings and terminal audio outcomes; combat engine untouched');
