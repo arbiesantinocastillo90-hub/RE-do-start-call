@@ -34,6 +34,6 @@ jobs:
       - name: Import project and parse scripts
         run: godot --headless --path . --editor --quit
       - name: Geometry and telegraph patterns
-        run: godot --headless --path . --script res://tests/test_geometry.gd
+        run: timeout 30s godot --headless --path . --script res://tests/test_geometry.gd
       - name: Turn locking, keyboard and restart regression suite
-        run: godot --headless --path . --script res://tests/test_turn_flow.gd
+        run: timeout 30s godot --headless --path . --script res://tests/test_turn_flow.gd
