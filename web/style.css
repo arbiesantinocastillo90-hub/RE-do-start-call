@@ -137,3 +137,19 @@
   .cell.telegraph{outline:3px solid Highlight;outline-offset:-3px}
   .cell.you{outline:3px solid CanvasText;outline-offset:-4px}
 }
+
+
+/* Compact, scroll-safe release setup. Start remains reachable on 800px laptops. */
+.modal-backdrop[data-view="setup"] .modal-panel{padding:19px 30px;max-height:calc(100dvh - 24px)}
+.modal-backdrop[data-view="setup"] .modal-panel h2{font-size:30px;margin:9px 0 8px}
+.modal-backdrop[data-view="setup"] .modal-panel p{line-height:1.5;margin-bottom:7px}
+.modal-backdrop[data-view="setup"] .setup-options{gap:8px;margin:10px 0 11px}
+.modal-backdrop[data-view="setup"] .setup-options fieldset{padding:7px 11px 9px}
+.modal-backdrop[data-view="setup"] .shape-options label>span{padding:5px 3px;font-size:20px}
+.modal-backdrop[data-view="setup"] .avatar-preview{margin-top:7px;padding:6px 10px}
+.modal-backdrop[data-view="setup"] .avatar-preview-glyph{width:36px;height:36px;font-size:22px}
+.modal-backdrop[data-view="setup"] .setup-select{margin-top:9px}
+.modal-backdrop[data-view="setup"] .setup-check{margin-top:4px;min-height:23px}
+.modal-backdrop[data-view="setup"] .modal-footer{margin-top:8px}
+.modal-backdrop[data-view="setup"] #modal-primary{position:sticky;bottom:0;z-index:2;box-shadow:0 -8px 24px #101b27b8}
+@media(max-width:560px){.modal-backdrop[data-view="setup"] .modal-panel{padding:18px 15px}}
