@@ -52,14 +52,34 @@ var restart_button: Button
 var reward_box: VBoxContainer
 var overlay_label: Label
 var options: Array[Dictionary] = []
+var clue_button: Button
+var clue_details: VBoxContainer
+var clue_hint: Label
+var clue_hover := false
+var clue_focused := false
+var clue_pinned := false
+var clue_blocked := false
+var step_buttons: Array[Button] = []
+var setup_overlay: ColorRect
+var setup_shape: OptionButton
+var setup_tint: OptionButton
+var setup_longer: CheckBox
+var setup_retain: CheckBox
+var setup_glow: CheckBox
+var avatar_glyph := "◉"
+var avatar_color := Color("#81c6b3")
+var decorative_glow := true
 
 func _ready() -> void:
     rng.randomize()
     _build_ui()
-    _start_run()
+    _open_setup()
 
 func _start_run() -> void:
     phase_generation += 1
+    clue_pinned = false
+    clue_blocked = false
+    _sync_clue()
     max_hp = 14
     hp = max_hp
     owned.clear()
@@ -414,6 +434,12 @@ func _build_ui() -> void:
     title_label.add_theme_color_override("font_color", Color("#e7eafa"))
     left.add_child(title_label)
 
+    restart_button = Button.new()
+    restart_button.text = "↺ NEW LOOP / SETUP  [R]"
+    restart_button.add_theme_font_size_override("font_size", 11)
+    restart_button.pressed.connect(_open_setup)
+    left.add_child(restart_button)
+
     subtitle_label = Label.new()
     subtitle_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     subtitle_label.custom_minimum_size = Vector2(0, 72)
@@ -436,12 +462,29 @@ func _build_ui() -> void:
             board.add_child(button)
             tiles.append(button)
 
+    clue_button = Button.new()
+    clue_button.text = "⌁  MEMORY TRACE / HOVER · FOCUS · TAP"
+    clue_button.add_theme_font_size_override("font_size", 12)
+    clue_button.mouse_entered.connect(_clue_pointer.bind(true))
+    clue_button.mouse_exited.connect(_clue_pointer.bind(false))
+    clue_button.focus_entered.connect(_clue_focus.bind(true))
+    clue_button.focus_exited.connect(_clue_focus.bind(false))
+    clue_button.pressed.connect(_clue_toggle)
+    left.add_child(clue_button)
+
+    clue_details = VBoxContainer.new()
+    clue_details.visible = false
+    left.add_child(clue_details)
+    clue_hint = Label.new()
+    clue_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    clue_hint.add_theme_font_size_override("font_size", 14)
+    clue_hint.add_theme_color_override("font_color", Color("#c8b8a0"))
+    clue_details.add_child(clue_hint)
     instructions_label = Label.new()
     instructions_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    instructions_label.custom_minimum_size = Vector2(0, 90)
-    instructions_label.add_theme_font_size_override("font_size", 16)
+    instructions_label.add_theme_font_size_override("font_size", 14)
     instructions_label.add_theme_color_override("font_color", Color("#e6d9b0"))
-    left.add_child(instructions_label)
+    clue_details.add_child(instructions_label)
 
     var right_scroll := ScrollContainer.new()
     right_scroll.custom_minimum_size.x = 430
@@ -467,20 +510,21 @@ func _build_ui() -> void:
     phase_label.add_theme_color_override("font_color", Color("#fbbe88"))
     right.add_child(phase_label)
 
-    var accessibility_row := VBoxContainer.new()
-    right.add_child(accessibility_row)
-    var longer_toggle := CheckBox.new()
-    longer_toggle.text = "LONGER WARNINGS (AT LEAST 2.5 S)"
-    longer_toggle.tooltip_text = "Applies from the next warning phase."
-    longer_toggle.button_pressed = longer_tells
-    longer_toggle.toggled.connect(_set_longer_tells)
-    accessibility_row.add_child(longer_toggle)
-    var retain_toggle := CheckBox.new()
-    retain_toggle.text = "KEEP THREAT OUTLINES"
-    retain_toggle.tooltip_text = "Retain the exact threatened tiles during movement and attack."
-    retain_toggle.button_pressed = retain_warnings
-    retain_toggle.toggled.connect(_set_retain_warnings)
-    accessibility_row.add_child(retain_toggle)
+    var move_pad := HBoxContainer.new()
+    move_pad.add_theme_constant_override("separation", 7)
+    right.add_child(move_pad)
+    for direction in [
+        {"text": "↑", "delta": Vector2i.UP},
+        {"text": "←", "delta": Vector2i.LEFT},
+        {"text": "↓", "delta": Vector2i.DOWN},
+        {"text": "→", "delta": Vector2i.RIGHT}
+    ]:
+        var step := Button.new()
+        step.text = direction["text"]
+        step.custom_minimum_size = Vector2(72, 45)
+        step.pressed.connect(_move_by.bind(direction["delta"]))
+        move_pad.add_child(step)
+        step_buttons.append(step)
 
     var attacks := HBoxContainer.new()
     attacks.add_theme_constant_override("separation", 8)
@@ -516,41 +560,152 @@ func _build_ui() -> void:
 
     log_label = Label.new()
     log_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    log_label.custom_minimum_size = Vector2(0, 165)
-    log_label.add_theme_font_size_override("font_size", 14)
+    log_label.add_theme_font_size_override("font_size", 12)
     log_label.add_theme_color_override("font_color", Color("#b9bcd0"))
-    right.add_child(log_label)
+    clue_details.add_child(log_label)
 
     reward_box = VBoxContainer.new()
     reward_box.add_theme_constant_override("separation", 7)
     reward_box.visible = false
-    right.add_child(reward_box)
+    left.add_child(reward_box)
 
     overlay_label = Label.new()
     overlay_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     overlay_label.add_theme_font_size_override("font_size", 20)
     overlay_label.add_theme_color_override("font_color", Color("#b3eece"))
     overlay_label.visible = false
-    right.add_child(overlay_label)
-
-    restart_button = Button.new()
-    restart_button.text = "RESTART THE LOOP  [R]"
-    restart_button.pressed.connect(_start_run)
-    right.add_child(restart_button)
+    left.add_child(overlay_label)
 
     var footer := Label.new()
-    footer.text = "Arrows move / aim · Enter or click target · 1/2/3 attack"
-    footer.add_theme_font_size_override("font_size", 12)
-    footer.add_theme_color_override("font_color", Color("#67728a"))
-    right.add_child(footer)
+    footer.text = "ARROWS MOVE / AIM · ENTER STRIKES · SPACE HOLDS · 1/2/3 ATTACK"
+    footer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    footer.add_theme_font_size_override("font_size", 11)
+    footer.add_theme_color_override("font_color", Color("#9baac0"))
+    clue_details.add_child(footer)
+    _build_setup()
 
-func _set_longer_tells(value: bool) -> void:
-    longer_tells = value
-    _refresh()
+func _move_by(delta: Vector2i) -> void:
+    if phase == "MOVE":
+        _try_move(player + delta)
 
-func _set_retain_warnings(value: bool) -> void:
-    retain_warnings = value
-    _refresh()
+func _clue_pointer(entered: bool) -> void:
+    clue_hover = entered
+    if entered:
+        clue_blocked = false
+    _sync_clue()
+
+func _clue_focus(entered: bool) -> void:
+    clue_focused = entered
+    if entered:
+        clue_blocked = false
+    _sync_clue()
+
+func _clue_toggle() -> void:
+    clue_pinned = not clue_pinned
+    clue_blocked = not clue_pinned
+    _sync_clue()
+
+func _sync_clue() -> void:
+    if clue_details == null:
+        return
+    clue_details.visible = (clue_pinned or ((clue_hover or clue_focused) and not clue_blocked)) and not setup_overlay.visible
+
+func _build_setup() -> void:
+    setup_overlay = ColorRect.new()
+    setup_overlay.name = "PreGameSetup"
+    setup_overlay.color = Color("#080f1bea")
+    setup_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    setup_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+    add_child(setup_overlay)
+
+    var center := CenterContainer.new()
+    center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    setup_overlay.add_child(center)
+    var panel := PanelContainer.new()
+    panel.custom_minimum_size = Vector2(520, 0)
+    var panel_style := StyleBoxFlat.new()
+    panel_style.bg_color = Color("#1a2837")
+    panel_style.border_color = Color("#6b8291")
+    panel_style.set_border_width_all(2)
+    panel_style.content_margin_left = 26
+    panel_style.content_margin_right = 26
+    panel_style.content_margin_top = 20
+    panel_style.content_margin_bottom = 22
+    panel.add_theme_stylebox_override("panel", panel_style)
+    center.add_child(panel)
+
+    var choices := VBoxContainer.new()
+    choices.add_theme_constant_override("separation", 12)
+    panel.add_child(choices)
+    var header := Label.new()
+    header.text = "HOUSE / PREPARE\nBefore the door opens."
+    header.add_theme_font_size_override("font_size", 24)
+    choices.add_child(header)
+    var context := Label.new()
+    context.text = "Choose your appearance and the atmosphere. Neither changes combat geometry."
+    context.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    choices.add_child(context)
+    var shape_label := Label.new()
+    shape_label.text = "YOUR SHAPE  /  VISUAL ONLY"
+    choices.add_child(shape_label)
+    setup_shape = OptionButton.new()
+    setup_shape.add_item("◉  CIRCLE")
+    setup_shape.add_item("◆  DIAMOND")
+    setup_shape.add_item("✦  STAR")
+    choices.add_child(setup_shape)
+    var tint_label := Label.new()
+    tint_label.text = "SIGNAL COLOR"
+    choices.add_child(tint_label)
+    setup_tint = OptionButton.new()
+    setup_tint.add_item("MOSS / TEAL")
+    setup_tint.add_item("LAMP / AMBER")
+    setup_tint.add_item("DUSK / LILAC")
+    choices.add_child(setup_tint)
+    var accessibility_label := Label.new()
+    accessibility_label.text = "ACCESSIBILITY"
+    choices.add_child(accessibility_label)
+    setup_longer = CheckBox.new()
+    setup_longer.text = "LONGER WARNINGS (3 SECONDS BASELINE)"
+    choices.add_child(setup_longer)
+    setup_retain = CheckBox.new()
+    setup_retain.text = "KEEP WARNING OUTLINES"
+    choices.add_child(setup_retain)
+    var effects_label := Label.new()
+    effects_label.text = "ATMOSPHERE / DECORATIVE ONLY"
+    choices.add_child(effects_label)
+    setup_glow = CheckBox.new()
+    setup_glow.text = "SUBTLE WARNING GLOW"
+    setup_glow.button_pressed = true
+    choices.add_child(setup_glow)
+    var start_button := Button.new()
+    start_button.text = "OPEN YOUR EYES →"
+    start_button.custom_minimum_size.y = 50
+    start_button.pressed.connect(_begin_from_setup)
+    choices.add_child(start_button)
+
+func _open_setup() -> void:
+    phase_generation += 1 # Invalidates an active asynchronous tell.
+    phase = "SETUP"
+    if reward_box != null:
+        reward_box.visible = false
+    if overlay_label != null:
+        overlay_label.visible = false
+    clue_pinned = false
+    clue_blocked = false
+    setup_overlay.visible = true
+    _sync_clue()
+    setup_shape.call_deferred("grab_focus")
+
+func _begin_from_setup() -> void:
+    var shapes := ["◉", "◆", "✦"]
+    var colors := ["#81c6b3", "#dbb47b", "#c5a8d5"]
+    avatar_glyph = shapes[setup_shape.selected]
+    avatar_color = Color(colors[setup_tint.selected])
+    longer_tells = setup_longer.button_pressed
+    retain_warnings = setup_retain.button_pressed
+    decorative_glow = setup_glow.button_pressed
+    setup_overlay.visible = false
+    _start_run()
 
 func _aim(delta: Vector2i) -> void:
     var next := aim + delta
@@ -561,7 +716,8 @@ func _aim(delta: Vector2i) -> void:
 func _refresh() -> void:
     if tiles.is_empty():
         return
-    subtitle_label.text = "HOUSE  /  %d OF 3  —  %s\n%s" % [room_index + 1, room["name"], room["subtitle"]]
+    subtitle_label.text = "HOUSE  /  %d OF 3  —  %s" % [room_index + 1, room["name"]]
+    clue_hint.text = str(room["subtitle"])
     stats_label.text = "YOU  %d/%d HP     %s  %d/%d HP\nROUND %d" % [hp, max_hp, room["enemy"], maxi(0, enemy_hp), enemy_max_hp, round_turn + 1]
     match phase:
         "TELL":
@@ -608,11 +764,11 @@ func _refresh() -> void:
                     paint = Color("#e8a45d")
                     text += "\n!"
             if cell == player:
-                paint = Color("#81c6b3")
-                text = "YOU"
+                paint = avatar_color
+                text = avatar_glyph + "\nYOU"
                 if phase == "TELL" and tell_visible and warned.has(cell):
                     paint = Color("#e8a45d")
-                    text = "YOU\n!"
+                    text = avatar_glyph + "\n!"
             if retain_warnings and (phase == "MOVE" or phase == "ATTACK") and warned.has(cell):
                 text += (" !" if text != "" else "!")
             button.text = text
@@ -640,6 +796,9 @@ func _refresh() -> void:
             normal.set_corner_radius_all(5)
             normal.border_width_bottom = 2
             normal.border_color = paint.lightened(0.18)
+            if decorative_glow and phase == "TELL" and warned.has(cell):
+                normal.shadow_size = 3
+                normal.shadow_color = Color("#d2a36c55")
             if phase == "MOVE" and Pattern.distance(player, cell) == 1 and cell != enemy:
                 normal.set_border_width_all(2)
                 normal.border_color = Color("#8cbecd")
@@ -658,6 +817,8 @@ func _refresh() -> void:
         b.disabled = phase != "MOVE" and phase != "ATTACK"
         b.text = ("● " if name == attack else "") + str(name).to_upper()
     hold_button.disabled = phase != "MOVE"
+    for b in step_buttons:
+        b.disabled = phase != "MOVE"
     heal_button.visible = owned.has("comfort")
     heal_button.disabled = phase != "ATTACK" or owned.has("numb")
     freeze_button.visible = owned.has("freeze")
@@ -679,9 +840,11 @@ func _refresh() -> void:
 func _unhandled_key_input(event: InputEvent) -> void:
     if not (event is InputEventKey) or not event.pressed or event.echo:
         return
+    if setup_overlay.visible:
+        return
     match event.keycode:
         KEY_R:
-            _start_run()
+            _open_setup()
         KEY_SPACE:
             _hold()
         KEY_1:
