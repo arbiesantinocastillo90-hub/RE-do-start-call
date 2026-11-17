@@ -105,3 +105,8 @@
   .scanlines{display:none}
   button,.cell{transition:none!important}
 }
+
+.avatar-preview{display:flex;align-items:center;gap:15px;padding:9px 13px;margin-top:12px;background:#101b27;border:1px solid #485d6e}
+.avatar-preview-glyph{display:grid;place-items:center;width:42px;height:42px;border:1px solid #657684;background:#263548;font-size:25px;color:#79baaa}
+.avatar-preview strong,.avatar-preview small{display:block;font-size:10px;letter-spacing:.11em;color:#d4e1df}
+.avatar-preview small{margin-top:3px;color:#b9c7d1}
