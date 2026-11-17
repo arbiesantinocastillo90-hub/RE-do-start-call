@@ -48,8 +48,8 @@
       button.innerHTML = `<span class="coord">${'ABCDEF'[x]}${y + 1}</span><span class="symbol"></span><span class="name"></span>`;
       button.addEventListener('click', () => {
         if (!game) return;
-        if (game.phase === 'MOVE') game.move(cell);
-        else if (game.phase === 'ATTACK') game.attackAt(cell);
+        if (game.phase === 'MOVE') { effects.armAudio(); game.move(cell); }
+        else if (game.phase === 'ATTACK') attemptAttack(cell);
       });
       button.addEventListener('mouseenter', () => { hover = cell; if (game) drawBoard(game); });
       button.addEventListener('mouseleave', () => { hover = null; if (game) drawBoard(game); });
@@ -58,6 +58,25 @@
       boardEl.append(button);
       tiles.push(button);
     }
+  }
+
+  // FX owns decorative DOM only. The engine remains the exclusive owner of turns,
+  // damage and pending warnings. Keyboard Enter activates a tile's click handler.
+  const effects = window.RedoEffects.create({
+    board: boardEl, tiles, frame: $('.board-frame'),
+    playerBar: $('#player-health-bar').parentElement,
+    enemyBar: $('#enemy-health-bar').parentElement,
+    preferences: Prefs
+  });
+
+  function attemptAttack(cell) {
+    if (!game || game.phase !== 'ATTACK') return;
+    const footprint = cellsFor(game.attackName, game.player, cell);
+    const enemyBefore = game.enemyHp;
+    effects.armAudio();
+    // Effects are emitted only AFTER the engine accepts this action. Never
+    // let an animation callback invoke attackAt, finishTell or move again.
+    if (game.attackAt(cell)) effects.attack(footprint, game.enemyHp < enemyBefore);
   }
 
   function drawBoard(s) {
@@ -190,6 +209,7 @@
     $('#freeze-btn').hidden = !s.has('freeze');
     $('#freeze-btn').disabled = !['MOVE', 'ATTACK'].includes(s.phase) || !s.freezeReady;
     drawBoard(s);
+    effects.observe(s); // immutable transition comparison; never writes Game
     announceStatus(s);
     if (s.phase === 'REWARD' && currentModal !== `reward${s.roomIndex}`) showReward(s);
     if (s.phase === 'WIN' && currentModal !== 'win') showEnd(true);
@@ -302,6 +322,8 @@
 
   function begin() {
     commitSetup(); // Snapshot the user-selected preferences before constructing the engine.
+    effects.reset(); // Cancel old FX before any new game emits its first tell.
+    effects.armAudio(); // This function is called from the explicit START gesture.
     playMenuTone(); // Menu-only audio; Agent E owns all combat SFX.
     lastAnnouncement = '';
     pinned = false;
@@ -321,6 +343,7 @@
   }
 
   function showSetup() {
+    effects.reset(); // Invalidate all old room/attack animation cancel tokens.
     if (game) {
       game.dispose(); // Cancel any pending tell timer before leaving combat.
       game = null;
@@ -370,6 +393,7 @@
   function moveDelta(delta) {
     if (!game || game.phase !== 'MOVE') return;
     const next = p(game.player.x + delta.x, game.player.y + delta.y);
+    effects.armAudio();
     if (game.move(next)) tiles[next.y * SIZE + next.x].focus();
   }
   for (const button of document.querySelectorAll('[data-step]')) {

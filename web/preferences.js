@@ -15,7 +15,7 @@
     pulse: true,
     highContrast: false,
     reduceMotion: false,
-    sound: 'quiet'
+    sound: 'off'
   });
   const OPTIONS = {
     avatar: ['circle', 'diamond', 'star'],
