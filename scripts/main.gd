@@ -768,9 +768,17 @@ func _refresh() -> void:
             var paint := Color("#253248") if (x+y)%2==0 else Color("#303d54")
             var text := ""
             if ground.has(cell):
-                var last: Dictionary = ground[cell][ground[cell].size() - 1]
-                paint = Color("#704745") if last["source"] == "enemy" else Color("#405e65")
-                text = "."
+                # Lingering effects stay visible even without color perception.
+                # Preserve both ownership cues when opposite marks overlap.
+                var enemy_mark := false
+                var player_mark := false
+                for mark in ground[cell]:
+                    if mark["source"] == "enemy":
+                        enemy_mark = true
+                    elif mark["source"] == "player":
+                        player_mark = true
+                paint = Color("#704745") if enemy_mark else Color("#405e65")
+                text = ("▒" if enemy_mark else "") + ("∙" if player_mark else "")
             if phase == "TELL" and tell_visible and warned.has(cell):
                 paint = Color("#e8a45d")
                 text = "!"
@@ -798,6 +806,11 @@ func _refresh() -> void:
                 tile_description += ": " + str(room["enemy"])
             else:
                 tile_description += ": empty"
+            if ground.has(cell):
+                for mark in ground[cell]:
+                    tile_description += "; %s %s lingering tile" % [
+                        "enemy" if mark["source"] == "enemy" else "your", str(mark["kind"])
+                    ]
             # Visible danger is essential game state, not an optional memory hint.
             # When the tell hides, warnings stop being exposed unless outlines were opted into.
             if warned.has(cell) and phase == "TELL" and tell_visible:
