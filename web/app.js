@@ -201,6 +201,7 @@
     $('#modal-primary').textContent = primary;
     $('#modal-primary').onclick = action;
     $('#modal-primary').hidden = false;
+    $('#modal').dataset.view = setup ? 'setup' : 'dialog';
     $('#setup-options').hidden = !setup;
     $('#modal-choices').replaceChildren();
     shellEl.inert = true;
