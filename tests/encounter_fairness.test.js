@@ -178,3 +178,70 @@ console.log('PASS: 12 frozen encounter patterns (8-cycle checks), ' + directChec
   'status/slow/hold checks and compatible reward offerings.');
 console.log('INFO: ' + doublePressure + ' known previous-mark + current-warning ' +
   'double-pressure positions across two cycles; this counts disclosed floor risk, not hidden strikes.');
+
+
+/*
+ * Modifier-pair matrix: exercise real strike and pre-existing floor status
+ * resolution at EVERY traversable cell, not only the unmodified baseline.
+ * Only two modifiers can be owned in Release A. Numb/Comfort is excluded by
+ * the reward selection rules; all other 27 pairs remain reachable.
+ *
+ * Flinch is intentionally disarmed here to isolate exact-hit parity. Its
+ * escape policy (including the known Numb+Flinch interaction) is tracked
+ * separately and must be fixed in BOTH implementations by the core owner.
+ */
+let pairCases = 0;
+const reachablePairs = [];
+for (let a = 0; a < MODS.length; a++) for (let b = a + 1; b < MODS.length; b++) {
+  const pair = [MODS[a].id, MODS[b].id];
+  if (pair.includes('numb') && pair.includes('comfort')) continue;
+  reachablePairs.push(pair);
+}
+assert.equal(reachablePairs.length, 27);
+for (const owned of reachablePairs) for (let r = 0; r < ROOMS.length; r++) {
+  const room = ROOMS[r];
+  for (let t = 0; t < 4; t++) {
+    const fixedWarning = new Set(patternFor(r, t).cells.map(id));
+    for (let y = 0; y < SIZE; y++) for (let x = 0; x < SIZE; x++) {
+      const here = p(x, y);
+      if (id(here) === id(room.pos)) continue;
+      const s = silent();
+      s.owned = owned.slice();
+      s.startRoom(r);
+      s.enemyHp = 100; // No accidental clear from residual strike checks.
+      s.turn = t;
+      s.announceTell();
+      assert.deepEqual([...s.warningIds].sort(), [...fixedWarning].sort());
+      // Simulate an already-visible enemy residue and a self trace. They tick
+      // BEFORE today's strike; today's new marks must not retroactively tick.
+      s.player = here;
+      s.addStatus(here, room.effect, 'enemy', 2, room.effectDamage);
+      s.addStatus(here, 'spark', 'player', 2, 1);
+      s.flinchReady = false;
+      s.freezeArmed = owned.includes('freeze');
+      s.finishTell();
+      assert.equal(s.hold(), true);
+      const target = legal(here, room.pos).find(c => id(c) !== id(here));
+      assert.ok(target);
+      assert.equal(s.attackAt(target), true);
+      const floorDamage = (owned.includes('numb') || room.effect === 'drip' ? 0 : room.effectDamage) +
+        (owned.includes('fight') && !owned.includes('numb') ? 1 : 0);
+      const directDamage = fixedWarning.has(id(here)) && !owned.includes('freeze')
+        ? Math.max(0, room.damage + Number(owned.includes('hyper')) - Number(owned.includes('bracing')))
+        : 0;
+      assert.equal(s.hp, 14 - floorDamage - directDamage,
+        'floor/strike accounting drift: room ' + r + ' turn ' + t +
+        ' cell ' + id(here) + ' mods ' + owned.join('+'));
+      assert.equal(s.phase, 'TELL', 'state stalled after resolving modifier pair');
+      for (const cell of patternFor(r, t).cells) {
+        assert.ok((s.tiles.get(id(cell)) || []).some(e =>
+          e.owner === 'enemy' && e.kind === room.effect && e.power === room.effectDamage),
+          'warned tile missing strike residue');
+      }
+      if (room.effect === 'drip') assert.equal(s.slowed, true, 'drip still slows with any modifier pair');
+      pairCases++;
+    }
+  }
+}
+console.log('PASS: ' + reachablePairs.length + ' reachable modifier pairs across ' +
+  pairCases + ' strike/status resolution positions in all 12 patterns.');
