@@ -5,6 +5,7 @@
   'use strict';
   const { Game, SIZE, MODS, cellsFor, p, id, distance } = window.RedoEngine;
   const $ = selector => document.querySelector(selector);
+  const Prefs = window.RedoPreferences;
   const boardEl = $('#board');
   const shellEl = $('.shell');
   const clueZone = $('#clue-zone');
@@ -29,6 +30,8 @@
   let hover = null;
   let currentModal = 'setup';
   let avatar = 'circle';
+  let settings = Prefs.load();
+  let menuAudio = null;
   let pinned = false;
   let peekDismissed = false;
   let lastAnnouncement = '';
@@ -217,21 +220,93 @@
     syncPeek();
   }
 
+  const avatarNames = { circle: 'CIRCLE', diamond: 'DIAMOND', star: 'STAR' };
+  const tintNames = { teal: 'MOSS / TEAL', amber: 'LAMP / AMBER', lilac: 'DUSK / LILAC' };
+
+  function readSetup() {
+    return Prefs.normalize({
+      avatar: $('input[name="avatar-shape"]:checked')?.value,
+      tint: $('#avatar-tint').value,
+      slowTells: $('#slow-tells').checked,
+      persistTells: $('#persist-tells').checked,
+      scanlines: $('#effect-scanlines').checked,
+      pulse: $('#effect-pulse').checked,
+      highContrast: $('#high-contrast').checked,
+      reduceMotion: $('#reduce-motion').checked,
+      sound: $('#sound-level').value
+    });
+  }
+
+  function hydrateSetup() {
+    const shape = document.querySelector('input[name="avatar-shape"][value="' + settings.avatar + '"]');
+    if (shape) shape.checked = true;
+    $('#avatar-tint').value = settings.tint;
+    $('#slow-tells').checked = settings.slowTells;
+    $('#persist-tells').checked = settings.persistTells;
+    $('#effect-scanlines').checked = settings.scanlines;
+    $('#effect-pulse').checked = settings.pulse;
+    $('#high-contrast').checked = settings.highContrast;
+    $('#reduce-motion').checked = settings.reduceMotion;
+    $('#sound-level').value = settings.sound;
+  }
+
+  function applySettings(value) {
+    settings = Prefs.setCurrent(value);
+    avatar = settings.avatar;
+    document.documentElement.style.setProperty('--avatar-fill', tints[settings.tint]);
+    document.body.dataset.visual = settings.avatar;
+    document.body.classList.toggle('no-scanlines', !settings.scanlines);
+    document.body.classList.toggle('no-pulse', !settings.pulse);
+    document.body.classList.toggle('high-contrast', settings.highContrast);
+    document.body.classList.toggle('user-reduced-motion', settings.reduceMotion);
+    $('#avatar-preview').textContent = avatars[settings.avatar];
+    $('#avatar-description').textContent = avatarNames[settings.avatar] + ' · ' + tintNames[settings.tint];
+    $('#sound-test').disabled = settings.sound === 'off';
+    // Agent E can listen for sound and motion preferences without owning this menu.
+    window.dispatchEvent(new CustomEvent('redo:preferenceschange', { detail: { ...settings } }));
+  }
+
+  function commitSetup() {
+    applySettings(readSetup());
+    Prefs.save(settings);
+  }
+
+  function playMenuTone() {
+    if (settings.sound === 'off') return;
+    const Context = window.AudioContext || window.webkitAudioContext;
+    if (!Context) return; // Unsupported audio is silent, never a startup blocker.
+    try {
+      const context = menuAudio || (menuAudio = new Context());
+      if (context.state === 'suspended') context.resume().catch(() => {});
+      const at = context.currentTime;
+      const oscillator = context.createOscillator();
+      const volume = context.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(392, at);
+      oscillator.frequency.exponentialRampToValueAtTime(523.25, at + 0.09);
+      volume.gain.setValueAtTime(0.0001, at);
+      volume.gain.exponentialRampToValueAtTime(Math.max(0.0001, Prefs.soundGain(settings) * 0.08), at + 0.02);
+      volume.gain.exponentialRampToValueAtTime(0.0001, at + 0.16);
+      oscillator.connect(volume);
+      volume.connect(context.destination);
+      oscillator.start(at);
+      oscillator.stop(at + 0.17);
+    } catch (_) {
+      // Audio device or permissions unavailable; leave the run usable.
+    }
+  }
+
   function begin() {
-    avatar = $('input[name="avatar-shape"]:checked')?.value || 'circle';
-    const tint = tints[$('#avatar-tint').value] || tints.teal;
-    document.documentElement.style.setProperty('--avatar-fill', tint);
-    document.body.dataset.visual = avatar;
-    document.body.classList.toggle('no-scanlines', !$('#effect-scanlines').checked);
-    document.body.classList.toggle('no-pulse', !$('#effect-pulse').checked);
+    commitSetup(); // Snapshot the user-selected preferences before constructing the engine.
+    playMenuTone(); // Menu-only audio; Agent E owns all combat SFX.
     lastAnnouncement = '';
     pinned = false;
     peekDismissed = false;
     hideModal();
     game = new Game({
       onUpdate: render,
-      slowTells: $('#slow-tells').checked,
-      persistTells: $('#persist-tells').checked
+      slowTells: settings.slowTells,
+      persistTells: settings.persistTells
     });
     render(game);
   }
@@ -244,9 +319,9 @@
     pinned = false;
     peekDismissed = false;
     currentModal = 'setup';
-    showModal('HOUSE // PREPARE', 'Before the door<br>opens.',
-      'The house holds three remembered rooms. Choose how you appear and how the room feels. These settings do not alter the attack patterns.',
-      'OPEN YOUR EYES', begin, true);
+    showModal('HOUSE // MAIN MENU', 'RE:(do)(start)(call)',
+      'Three rooms. One loop. Set your appearance, display and controls before starting. Combat patterns stay unchanged; longer warnings and outlines are optional accessibility aids.',
+      'START NEW LOOP', begin, true);
   }
 
   function showReward(s) {
@@ -299,6 +374,8 @@
   $('#freeze-btn').addEventListener('click', () => game?.freeze());
   $('#setup-btn').addEventListener('click', showSetup);
   $('#setup-options').addEventListener('submit', e => e.preventDefault());
+  $('#setup-options').addEventListener('change', commitSetup);
+  $('#sound-test').addEventListener('click', playMenuTone);
 
   document.addEventListener('keydown', event => {
     if (!$('#modal').hidden) {
@@ -347,6 +424,8 @@
     if (event.key.toLowerCase() === 'r') showSetup();
   });
 
+  hydrateSetup();
+  applySettings(settings);
   showSetup();
   window.__redo = { get game() { return game; }, begin, showSetup }; // Test-only inspector.
 })();
