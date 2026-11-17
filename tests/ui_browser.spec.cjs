@@ -54,7 +54,6 @@ test('setup, optional memory trace, and keyboard movement remain accessible', as
   await trigger.focus();
   await page.keyboard.press('Enter'); // Unpin.
   await expect(trace).toBeHidden();
-  await trigger.blur();
   await page.locator('#board').focus();
 
   await page.evaluate(() => window.__redo.game.finishTell());
