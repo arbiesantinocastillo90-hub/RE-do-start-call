@@ -100,7 +100,18 @@ func _run() -> void:
     await create_timer(0.38).timeout
     _check(game.get("phase") == "MOVE", "Current tell timer still unlocks MOVE")
 
-    game.call("_room_cleared")
+    # A lethal strike must end combat before enemy retaliation or a second turn.
+    # Put the player beside the fixed pipe only to isolate the terminal ordering.
+    var hp_before_kill: int = game.get("hp")
+    game.set("player", Vector2i(3, 2))
+    game.set("enemy_hp", 1)
+    game.call("_hold")
+    _check(game.get("phase") == "ATTACK", "Hold spends movement before lethal attack")
+    game.call("_try_attack", Vector2i(4, 2))
+    _check(game.get("phase") == "REWARD", "Lethal Jab goes directly to reward")
+    _check(game.get("hp") == hp_before_kill, "Lethal Jab prevents enemy retaliation")
+    _check(game.get("round_turn") == 0, "Lethal Jab does not start another enemy turn")
+    _check(game.get("warned").is_empty(), "Terminal clear invalidates the warning")
     _check(game.get("phase") == "REWARD", "Room clear opens modifier selection")
     var choices: Array = game.get("options")
     _check(choices.size() == 3, "Three reward choices are available")
@@ -125,6 +136,18 @@ func _run() -> void:
     var owned: Array = game.get("owned")
     _check(owned.is_empty(), "Keyboard restart discards prior modifiers")
     _check(game.get("round_turn") == 0, "Keyboard restart resets turn counter")
+
+    # On UI-enabled branches, opening SETUP must invalidate an in-flight TELL.
+    if game.has_method("_open_setup"):
+        game.call("_open_setup")
+        _check(game.get("phase") == "SETUP", "Setup takes ownership of input immediately")
+        var setup_position: Vector2i = game.get("player")
+        _press(game, KEY_RIGHT)
+        _check(game.get("player") == setup_position, "Setup rejects gameplay shortcuts")
+        await create_timer(1.10).timeout
+        _check(game.get("phase") == "SETUP", "Old tell timer cannot exit setup")
+        game.call("_begin_from_setup")
+        _check(game.get("phase") == "TELL", "Leaving setup starts a fresh warning")
 
     game.queue_free()
     if failures == 0:
