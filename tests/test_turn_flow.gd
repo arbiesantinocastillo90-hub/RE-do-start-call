@@ -31,6 +31,12 @@ func _run() -> void:
     var game: Node = MAIN_SCENE.instantiate()
     root.add_child(game)
 
+    # Native pre-game UX (Agent C) opens SETUP first; older main opens TELL.
+    if game.get("phase") == "SETUP":
+        var before_setup_position: Vector2i = game.get("player")
+        _press(game, KEY_RIGHT)
+        _check(game.get("player") == before_setup_position, "Setup locks battle movement")
+        game.call("_begin_from_setup")
     _check(game.get("phase") == "TELL", "New run starts with a warning")
     var warned_initial: Array = game.get("warned").duplicate()
     _check(warned_initial.size() == 6, "First pipe warning covers six tiles")
@@ -111,6 +117,9 @@ func _run() -> void:
     _check(game.get("player") == previous_position, "Direct movement rejected after death")
 
     _press(game, KEY_R)
+    if game.get("phase") == "SETUP":
+        _check(true, "Restart opens pre-game menu when available")
+        game.call("_begin_from_setup")
     _check(game.get("room_index") == 0, "Keyboard restart resets room index")
     _check(game.get("hp") == 14, "Keyboard restart restores starting HP")
     var owned: Array = game.get("owned")
