@@ -15,7 +15,7 @@
     pulse: true,
     highContrast: false,
     reduceMotion: false,
-    sound: 'quiet',
+    sound: 'off',
     volume: 100,
     muted: false
   });

@@ -16,7 +16,8 @@ const fakeStorage = () => {
 
 check('default pre-game settings', () => {
   assert.deepEqual(Prefs.load(null), { ...Prefs.defaults });
-  assert.equal(Prefs.soundGain(Prefs.defaults), 0.25);
+  assert.equal(Prefs.soundGain(Prefs.defaults), 0, 'fresh browser sessions start with optional sound muted');
+  assert.equal(Prefs.soundGain({ sound: 'quiet' }), 0.25);
 });
 check('round-trip preferences and isolate game state', () => {
   const storage = fakeStorage();
