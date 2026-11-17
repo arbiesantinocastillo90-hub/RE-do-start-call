@@ -22,7 +22,7 @@ For offline browser use, download this repository as ZIP, extract it and open `w
 
 The CI workflow [Release A automated acceptance](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/actions/workflows/release-a.yml) cross-exports the native `.exe` with Godot 4.4.1 export templates and uploads `release-a-windows-x64-cross-export` as a **workflow artifact**; a Windows 2022 job checks its PE format and launches the executable headlessly. Open a successful workflow run, choose **Artifacts → release-a-windows-x64-cross-export**, download ZIP, extract and keep `RE-do-start-call.exe` and `RE-do-start-call.pck` in the same directory. No installation is required.
 
-**Verification boundary:** the [integrated release-candidate PR's workflow](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/actions/runs/44004263671) passed Linux native, Node, Chromium, Windows cross-export and Windows headless launch. That is **not** a verified full Windows graphics, input, audio or three-room GUI playthrough. See [current QA gate](docs/RELEASE_A_QA.md) for exact evidence and remaining tasks.
+**Verified automated evidence on the integrated `main` SHA `384a6605ec0f922fba0c91d2d16a648f7206f32d`:** [Release A GitHub Actions run 44004831634](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/actions/runs/44004831634) completed successfully: Linux Godot native parse/turn tests, Node, real Chromium, Windows export, and Windows 2022 executable headless startup. This is **not** a verified full Windows graphics, input, audio or three-room GUI playthrough. See [current QA gate](docs/RELEASE_A_QA.md) for exact evidence and remaining tasks.
 
 ## Controls and tactics
 
