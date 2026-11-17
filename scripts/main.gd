@@ -423,10 +423,16 @@ func _build_ui() -> void:
     columns.add_theme_constant_override("separation", 24)
     margin.add_child(columns)
 
+    var left_scroll := ScrollContainer.new()
+    left_scroll.custom_minimum_size.x = 510
+    left_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    left_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    left_scroll.follow_focus = true
+    columns.add_child(left_scroll)
     var left := VBoxContainer.new()
     left.custom_minimum_size.x = 500
     left.add_theme_constant_override("separation", 14)
-    columns.add_child(left)
+    left_scroll.add_child(left)
 
     title_label = Label.new()
     title_label.text = "RE:(do)(start)(call)"
