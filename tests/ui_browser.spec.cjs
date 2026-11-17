@@ -8,6 +8,8 @@ test('setup, optional memory trace, and keyboard movement remain accessible', as
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto(gameUrl);
 
+  const browserErrors = [];
+  page.on('pageerror', error => browserErrors.push(error.stack || error.message));
   const modal = page.locator('#modal');
   const trace = page.locator('#clue-panel');
   const trigger = page.locator('#clue-trigger');
@@ -39,6 +41,12 @@ test('setup, optional memory trace, and keyboard movement remain accessible', as
   await expect(rail.locator('#phase-pill')).toHaveText('WATCH');
   await expect(rail.locator('#player-hp')).toHaveText('14 / 14');
   await expect(rail.locator('#instruction, #log, #room-hint, #slow-tells, #effect-pulse')).toHaveCount(0);
+  const startup = await page.evaluate(() => ({
+    ready: !!window.__redo.game,
+    modalHidden: document.querySelector('#modal').hidden,
+    phase: document.querySelector('#phase-pill').textContent
+  }));
+  if (!startup.ready) throw new Error('Engine did not initialize: ' + JSON.stringify({startup, browserErrors}));
   const duration = await page.evaluate(() => window.__redo.game.tellDuration);
   expect(duration).toBeGreaterThanOrEqual(2.5);
 
