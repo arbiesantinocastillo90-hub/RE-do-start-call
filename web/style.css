@@ -153,3 +153,17 @@
 .modal-backdrop[data-view="setup"] .modal-footer{margin-top:8px}
 .modal-backdrop[data-view="setup"] #modal-primary{position:sticky;bottom:0;z-index:2;box-shadow:0 -8px 24px #101b27b8}
 @media(max-width:560px){.modal-backdrop[data-view="setup"] .modal-panel{padding:18px 15px}}
+
+/* Agent F: accessible menu disclosures, independent mute/volume and reset choice. */
+.setup-volume{display:flex;align-items:center;gap:12px;margin-top:11px;color:#d5e0e2;font-size:11px;letter-spacing:.06em}
+.setup-volume input{flex:1;min-width:55px;accent-color:#9ad0c1}
+.setup-volume output{min-width:4ch;text-align:right;color:#d3e7e3}
+.menu-disclosure{border:1px solid #5b6c7c;background:#121e2d;padding:8px 12px;color:#cedcda}
+.menu-disclosure summary{cursor:pointer;font-size:11px;letter-spacing:.1em;font-weight:700;min-height:24px}
+.menu-disclosure summary small{color:#aabac5;font-size:10px;font-weight:400}
+.menu-disclosure p{margin:9px 0 2px!important;color:#d1dce0!important;font-size:12px!important;line-height:1.65!important}
+.menu-disclosure a{color:#b1e6db}
+.menu-disclosure summary:focus-visible,.menu-disclosure a:focus-visible,.setup-select select:focus-visible,.setup-volume input:focus-visible{outline:3px solid #a7e9d8;outline-offset:3px}
+.modal-secondary{display:block;width:100%;margin:8px 0 12px;min-height:46px;background:transparent;border:1px solid #b6cbd1;color:#ebf5f5;letter-spacing:.12em;font-weight:700}
+.modal-secondary[hidden],#modal-primary[hidden]{display:none!important}
+@media(max-width:560px){.setup-volume{gap:7px}.menu-disclosure{padding:9px}}
