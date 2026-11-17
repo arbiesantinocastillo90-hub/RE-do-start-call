@@ -168,6 +168,43 @@ for (const owned of MODS.map(m => m.id)) for (const rng of [0, 0.16, 0.5, 0.99])
   assert.equal(s.roomIndex, 2);
 }
 
+// Freeze must block exactly one warned strike and enforce precisely one
+// skipped movement without preventing HOLD or the next attack (all 12 patterns).
+for (let r = 0; r < 3; r++) for (let t = 0; t < 4; t++) {
+  const s = silent();
+  s.owned = ['freeze'];
+  s.startRoom(r);
+  s.turn = t;
+  s.announceTell();
+  const threatened = patternFor(r, t).cells.find(c => id(c) !== id(s.enemy));
+  assert.ok(threatened, 'warning needs a playable threatened tile');
+  s.player = threatened;
+  s.finishTell();
+  assert.equal(s.freeze(), true, 'Freeze can be armed before attack');
+  assert.equal(s.hold(), true);
+  const target = legal(s.player, s.enemy).find(c => id(c) !== id(s.player));
+  assert.ok(target);
+  assert.equal(s.attackAt(target), true);
+  assert.equal(s.hp, 14, 'Freeze blocked one deliberately warned strike');
+  assert.equal(s.skipMove, true);
+  s.finishTell();
+  assert.equal(s.move(target), false, 'Freeze downside prevents one movement');
+  assert.equal(s.phase, 'MOVE', 'Illegal move cannot spend action');
+  assert.equal(s.hold(), true, 'Freeze cannot block HOLD');
+  assert.equal(s.attackAt(target), true, 'The next attack remains usable');
+  assert.equal(s.phase, 'TELL', 'Freeze does not stall the game');
+}
+// Even if a corrupted save manually grants incompatible Numb+Comfort,
+// rejected healing cannot softlock the attack phase.
+const incompatible = silent();
+incompatible.owned = ['numb', 'comfort'];
+incompatible.startRoom(1);
+incompatible.finishTell();
+incompatible.hold();
+assert.equal(incompatible.comfort(), false);
+assert.equal(incompatible.phase, 'ATTACK');
+assert.equal(incompatible.attackAt(p(0, 4)), true, 'Normal attack remains possible');
+
 // Illegal origins are invalid on both Godot and browser; this was an
 // engine-parity regression caught in Godot's merged native core PR #9.
 assert.deepEqual(cellsFor('Sweep', p(-1, 2), p(2, 2)), []);
