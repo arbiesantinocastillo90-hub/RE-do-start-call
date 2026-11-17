@@ -69,6 +69,16 @@ func _run() -> void:
     _press(game, KEY_RIGHT)
     _check(game.get("player") == Vector2i(2, 2), "Arrow moves exactly one tile")
     _check(game.get("phase") == "ATTACK", "Move advances to ATTACK")
+    # Active-run reset is a confirm/cancel transaction, not a destructive R.
+    var hp_before_attack_reset: int = game.get("hp")
+    var enemy_before_attack_reset: int = game.get("enemy_hp")
+    _press(game, KEY_R)
+    _check(game.get("phase") == "RESET_CONFIRM", "R prompts instead of resetting during ATTACK")
+    game.call("_try_attack", Vector2i(4, 2))
+    _check(game.get("enemy_hp") == enemy_before_attack_reset, "Reset dialog blocks a direct attack")
+    game.call("_cancel_reset")
+    _check(game.get("phase") == "ATTACK", "Cancel resumes pending attack")
+    _check(game.get("hp") == hp_before_attack_reset, "Cancel preserves HP during attack")
     game.call("_try_move", Vector2i(3, 2))
     _check(game.get("player") == Vector2i(2, 2), "Direct second movement is rejected")
     game.call("_hold")
@@ -123,6 +133,23 @@ func _run() -> void:
     await create_timer(0.38).timeout
     _check(game.get("phase") == "MOVE", "Current tell timer still unlocks MOVE")
 
+    var pending_position: Vector2i = game.get("player")
+    var pending_hp: int = game.get("hp")
+    var pending_warned: Array = game.get("warned").duplicate()
+    _press(game, KEY_R)
+    _check(game.get("phase") == "RESET_CONFIRM", "R prompts instead of discarding MOVE state")
+    var reset_dialog: ConfirmationDialog = game.get("reset_confirmation")
+    _check(reset_dialog.visible, "Native reset offers a confirmation dialog")
+    game.call("_try_move", Vector2i(2, 2))
+    game.call("_hold")
+    _press(game, KEY_RIGHT)
+    _check(game.get("phase") == "RESET_CONFIRM", "Confirmation phase locks move, hold and keys")
+    _check(game.get("player") == pending_position, "Reset dialog cannot move player")
+    game.call("_cancel_reset")
+    _check(game.get("phase") == "MOVE", "Cancel returns to MOVE without spending turn")
+    _check(game.get("hp") == pending_hp, "Cancel preserves current HP")
+    _check(game.get("warned") == pending_warned, "Cancel preserves exact warned cells")
+
     # A lethal strike must end combat before enemy retaliation or a second turn.
     # Put the player beside the fixed pipe only to isolate the terminal ordering.
     var hp_before_kill: int = game.get("hp")
@@ -138,6 +165,14 @@ func _run() -> void:
     _check(game.get("phase") == "REWARD", "Room clear opens modifier selection")
     var choices: Array = game.get("options")
     _check(choices.size() == 3, "Three reward choices are available")
+    var original_offers: Array = choices.duplicate(true)
+    _press(game, KEY_R)
+    _check(game.get("phase") == "RESET_CONFIRM", "R prompts before discarding offered reward")
+    game.call("_take_modifier", str(choices[0]["id"]))
+    _check(game.get("phase") == "RESET_CONFIRM", "Reset confirmation blocks a reward choice")
+    game.call("_cancel_reset")
+    _check(game.get("phase") == "REWARD", "Cancel resumes same reward screen")
+    _check(game.get("options") == original_offers, "Cancel never rerolls offered modifiers")
     game.call("_take_modifier", "not-offered")
     _check(game.get("phase") == "REWARD", "Unoffered modifier cannot skip reward phase")
     game.call("_take_modifier", str(choices[0]["id"]))
@@ -171,6 +206,29 @@ func _run() -> void:
         _check(game.get("phase") == "SETUP", "Old tell timer cannot exit setup")
         game.call("_begin_from_setup")
         _check(game.get("phase") == "TELL", "Leaving setup starts a fresh warning")
+
+    # An R prompt during TELL invalidates the old timer and MUST replay
+    # the same warning in full after cancel, without moving the clock forward.
+    var warning_on_reset: Array = game.get("warned").duplicate()
+    _press(game, KEY_R)
+    _check(game.get("phase") == "RESET_CONFIRM", "R prompts during visible TELL")
+    await create_timer(1.07).timeout
+    _check(game.get("phase") == "RESET_CONFIRM", "Covered tell expiry cannot advance gameplay")
+    game.call("_cancel_reset")
+    _check(game.get("phase") == "TELL", "Cancel replays full warning before MOVE")
+    _check(game.get("tell_visible"), "Canceled reset restores visible threat flash")
+    _check(game.get("warned") == warning_on_reset, "Replay uses identical threat coordinates")
+    await create_timer(0.35).timeout
+    _check(game.get("phase") == "TELL", "Old timer cannot shorten resumed warning")
+    await create_timer(0.72).timeout
+    _check(game.get("phase") == "MOVE", "Resumed tell eventually unlocks movement")
+    _press(game, KEY_R)
+    _check(game.get("phase") == "RESET_CONFIRM", "Confirm requires explicit acceptance")
+    game.call("_confirm_reset")
+    _check(game.get("phase") == "SETUP", "Only DISCARD RUN returns active game to setup")
+    game.call("_begin_from_setup")
+    _check(game.get("room_index") == 0, "Confirmed reset returns to Hallway")
+    _check(game.get("hp") == 14, "Confirmed reset restores starting health")
 
 
     # Numb must not make a harmless rust/echo floor block a Flinch escape.
