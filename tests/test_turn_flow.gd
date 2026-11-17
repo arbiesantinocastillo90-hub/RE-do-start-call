@@ -72,6 +72,14 @@ func _run() -> void:
     _press(game, KEY_RIGHT)
     _press(game, KEY_RIGHT)
     _check(game.get("aim") == Vector2i(4, 2), "Arrows aim during ATTACK")
+    # A focused HUD button must receive Enter itself, not trigger a hidden attack.
+    var action_buttons: Dictionary = game.get("attack_buttons")
+    var focused_action: Button = action_buttons["Jab"]
+    focused_action.grab_focus()
+    _press(game, KEY_ENTER)
+    _check(game.get("phase") == "ATTACK", "Enter on focused HUD button does not fire")
+    _check(game.get("round_turn") == 0, "Focused control cannot spend a combat turn")
+    focused_action.release_focus()
     _press(game, KEY_ENTER)
 
     _check(game.get("round_turn") == 1, "Valid attack resolves one enemy turn")
