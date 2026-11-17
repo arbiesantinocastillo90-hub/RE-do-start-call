@@ -689,6 +689,9 @@ func _input(event: InputEvent) -> void:
         return
     if key.ctrl_pressed or key.alt_pressed or key.meta_pressed:
         return
+    # A future/native pre-game setup owns all keys until PLAY is chosen.
+    if phase == "SETUP":
+        return
     # Preserve Space activation for focused HUD controls (including settings).
     # Enter remains the explicit attack-aim key during ATTACK.
     var focused := get_viewport().gui_get_focus_owner()
@@ -700,7 +703,11 @@ func _input(event: InputEvent) -> void:
     var handled := true
     match key.keycode:
         KEY_R:
-            _start_run()
+            # C's native setup flow opens the menu; old builds restart directly.
+            if has_method("_open_setup"):
+                call("_open_setup")
+            else:
+                _start_run()
         KEY_SPACE:
             if phase == "MOVE":
                 _hold()
