@@ -168,6 +168,91 @@ for (const owned of MODS.map(m => m.id)) for (const rng of [0, 0.16, 0.5, 0.99])
   assert.equal(s.roomIndex, 2);
 }
 
+// Exhaust every achievable one/two-modifier build, on every free tile in
+// every pattern, with an ENEMY floor mark already underfoot. Fight also adds a
+// PLAYER-owned mark at the same tile. This exercises direct + floor stacking,
+// Numb immunity, Flinch's conditional evade, Bracing/Hyper damage and softlocks
+// without assuming that an experienced player will choose perfect movement.
+const loadouts = [[]];
+const modIds = MODS.map(m => m.id);
+for (const a of modIds) loadouts.push([a]);
+for (let i = 0; i < modIds.length; i++) for (let j = i + 1; j < modIds.length; j++) {
+  const pair = [modIds[i], modIds[j]];
+  if (pair.includes('numb') && pair.includes('comfort')) continue; // not offered
+  loadouts.push(pair);
+}
+let buildCases = 0;
+for (const owned of loadouts) for (let r = 0; r < 3; r++) for (let t = 0; t < 4; t++) {
+  const room = ROOMS[r];
+  const warning = new Set(patternFor(r, t).cells.map(id));
+  for (let y = 0; y < SIZE; y++) for (let x = 0; x < SIZE; x++) {
+    const here = p(x, y);
+    if (id(here) === id(room.pos)) continue;
+    const s = silent();
+    s.owned = [...owned];
+    s.startRoom(r);
+    s.turn = t;
+    s.announceTell();
+    s.player = here;
+    if (s.has('bracing')) { s.maxHp = 12; s.hp = 12; }
+    const initialHp = s.hp;
+    s.addStatus(here, room.effect, 'enemy', 2, room.effectDamage);
+    if (s.has('fight')) s.addStatus(here, 'burn', 'player', 2, 1);
+    s.finishTell();
+    assert.equal(s.hold(), true);
+    const target = legal(here, room.pos).find(cell => id(cell) !== id(here));
+    s.selectAttack('Jab');
+    assert.equal(s.attackAt(target), true);
+    const groundHit = s.has('numb') ? 0 : room.effectDamage + (s.has('fight') ? 1 : 0);
+    const flinches = s.has('flinch') && warning.has(id(here));
+    const directHit = warning.has(id(here)) && !flinches
+      ? Math.max(0, room.damage + (s.has('hyper') ? 1 : 0) - (s.has('bracing') ? 1 : 0))
+      : 0;
+    assert.equal(s.hp, initialHp - groundHit - directHit,
+      'floor/direct mismatch for ' + owned.join('+') + ' r' + r + '/t' + t + '/' + id(here));
+    if (flinches) assert.ok(!s.warningIds.has(id(s.player)),
+      'Flinch must escape to an unwarned tile');
+    assert.equal(s.phase, 'TELL', 'modifier/hazard combination deadlocked');
+    buildCases++;
+  }
+}
+
+// Freeze's promised one-strike block must be followed by a HOLD-able skipped
+// movement; it must not create a permanently locked MOVE phase.
+for (let r = 0; r < 3; r++) for (let t = 0; t < 4; t++) {
+  const s = silent();
+  s.owned = ['freeze'];
+  s.startRoom(r);
+  s.turn = t;
+  s.announceTell();
+  const threatened = patternFor(r, t).cells.find(c => id(c) !== id(s.enemy));
+  s.player = threatened;
+  s.finishTell();
+  assert.equal(s.freeze(), true);
+  assert.equal(s.hold(), true);
+  const target = legal(s.player, s.enemy).find(c => id(c) !== id(s.player));
+  assert.equal(s.attackAt(target), true);
+  assert.equal(s.hp, 14, 'Freeze failed to block a deliberately threatened strike');
+  assert.equal(s.skipMove, true);
+  s.finishTell();
+  assert.equal(s.move(target), false, 'Freeze downside must lock one movement');
+  assert.equal(s.phase, 'MOVE');
+  assert.equal(s.hold(), true, 'Freeze must still allow HOLD');
+  assert.equal(s.attackAt(target), true, 'Freeze must permit the next attack');
+  assert.equal(s.phase, 'TELL');
+}
+
+// Prevent the unsupported manual Numb+Comfort combination from blocking the
+// Attack phase: rejecting a heal must leave normal attacks available.
+const unavailableComfort = silent();
+unavailableComfort.owned = ['numb', 'comfort'];
+unavailableComfort.startRoom(1);
+unavailableComfort.finishTell();
+unavailableComfort.hold();
+assert.equal(unavailableComfort.comfort(), false);
+assert.equal(unavailableComfort.phase, 'ATTACK');
+assert.equal(unavailableComfort.attackAt(p(0, 4)), true);
+
 // Illegal origins are invalid on both Godot and browser; this was an
 // engine-parity regression caught in Godot's merged native core PR #9.
 assert.deepEqual(cellsFor('Sweep', p(-1, 2), p(2, 2)), []);
@@ -175,6 +260,6 @@ assert.deepEqual(cellsFor('Burst', p(6, 2), p(4, 2)), []);
 
 console.log('PASS: 12 frozen encounter patterns (8-cycle checks), ' + directChecks +
   ' exact warned-to-strike position cases, no base direct-hit traps, ' +
-  'status/slow/hold checks and compatible reward offerings.');
+  'status/slow/hold checks, ' + buildCases + ' combined-modifier cases and compatible rewards.');
 console.log('INFO: ' + doublePressure + ' known previous-mark + current-warning ' +
   'double-pressure positions across two cycles; this counts disclosed floor risk, not hidden strikes.');
