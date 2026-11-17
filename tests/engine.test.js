@@ -79,4 +79,19 @@ test('accessible long tells retain identical danger geometry and a 2.5-second mi
   assert.ok(Math.abs(base.tellDuration - (accessible.tellDuration - 0.18)) < 1e-9);
   assert.deepEqual([...accessible.warningIds].sort(), [...normal.warningIds].sort());
 });
+test('Numb and Flinch share floor risk logic with native Godot, but drip stays unsafe', () => {
+  const s=game(); s.tiles.clear(); s.player=p(2,2); s.enemy=p(4,2);
+  s.warningIds=new Set([id(p(2,2)), id(p(3,2)), id(p(2,3)), id(p(1,2))]);
+  s.addStatus(p(2,1),'echo','enemy',2,1);
+  s.owned=['flinch'];
+  assert.equal(s.flinchEscape(), null);
+  s.owned=['flinch','numb'];
+  assert.deepEqual(s.flinchEscape(), p(2,1));
+  s.addStatus(p(2,1),'drip','enemy',2,0);
+  assert.equal(s.flinchEscape(), null);
+  // Fight Response own marks can harm, except when Numb suppresses their damage.
+  s.tiles.clear(); s.addStatus(p(2,1),'burn','player',2,1);
+  s.owned=['flinch','fight']; assert.equal(s.flinchEscape(), null);
+  s.owned=['flinch','fight','numb']; assert.deepEqual(s.flinchEscape(), p(2,1));
+});
 console.log(`\n${passed} game-engine tests passed.`);

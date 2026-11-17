@@ -172,6 +172,24 @@ func _run() -> void:
         game.call("_begin_from_setup")
         _check(game.get("phase") == "TELL", "Leaving setup starts a fresh warning")
 
+
+    # Numb must not make a harmless rust/echo floor block a Flinch escape.
+    game.call("_start_run")
+    game.set("player", Vector2i(2, 2))
+    game.set("enemy", Vector2i(4, 2))
+    var flinch_warning: Array[Vector2i] = game.get("warned")
+    flinch_warning.clear()
+    flinch_warning.append_array([Vector2i(2, 2), Vector2i(3, 2), Vector2i(2, 3), Vector2i(1, 2)])
+    game.call("_add_ground", Vector2i(2, 1), "echo", "enemy", 2, 1)
+    var flinch_owned: Array[String] = game.get("owned")
+    flinch_owned.clear()
+    flinch_owned.append("flinch")
+    _check(game.call("_find_flinch_tile") == Vector2i(-1, -1), "Flinch refuses damaging echo floor without Numb")
+    flinch_owned.append("numb")
+    _check(game.call("_find_flinch_tile") == Vector2i(2, 1), "Numb makes echo-marked escape safe for Flinch")
+    game.call("_add_ground", Vector2i(2, 1), "drip", "enemy", 2, 1)
+    _check(game.call("_find_flinch_tile") == Vector2i(-1, -1), "Drip slow remains dangerous even with Numb")
+
     game.queue_free()
     if failures == 0:
         print("PASS: Godot turn-flow regression suite")
