@@ -25,3 +25,4 @@ jobs:
           node tests/autoplay.test.js
           node tests/ui_contract.test.js
           node tests/preferences.test.js
+          node tests/effects.test.js
