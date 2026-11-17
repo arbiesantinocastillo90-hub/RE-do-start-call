@@ -424,6 +424,9 @@
   $('#setup-btn').addEventListener('click', requestSetup);
   $('#setup-options').addEventListener('submit', e => e.preventDefault());
   $('#setup-options').addEventListener('change', commitSetup);
+  $('#sound-volume').addEventListener('input', () => {
+    $('#sound-volume-display').textContent = $('#sound-volume').value + '%';
+  });
   $('#sound-test').addEventListener('click', playMenuTone);
 
   document.addEventListener('keydown', event => {
