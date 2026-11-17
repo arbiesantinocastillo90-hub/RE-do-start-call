@@ -67,10 +67,13 @@
 
   function positionMarker(s, previous) {
     const tile = tiles[s.player.y * SIZE + s.player.x];
-    // Animate only a deliberate cardinal MOVE -> ATTACK transition; never a reset/room spawn.
-    const walked = previous && previous.roomIndex === s.roomIndex &&
-      previous.phase === 'MOVE' && s.phase === 'ATTACK' &&
+    // Interpolate actual one-tile movement (manual or Flinch), never room spawns/reset.
+    const stepped = previous && previous.roomIndex === s.roomIndex &&
       distance(previous.player, s.player) === 1;
+    const deliberate = previous && previous.phase === 'MOVE' && s.phase === 'ATTACK';
+    const flinched = previous && previous.phase === 'RESOLVE' && s.phase === 'TELL' &&
+      s.turn === previous.turn + 1;
+    const walked = stepped && (deliberate || flinched);
     playerMarker.classList.toggle('no-motion', !walked);
     playerMarker.style.width = tile.offsetWidth + 'px';
     playerMarker.style.height = tile.offsetHeight + 'px';
