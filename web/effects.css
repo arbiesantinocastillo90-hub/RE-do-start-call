@@ -1,0 +1,49 @@
+/* Agent E — finite, observational in-game feedback. All combat cells
+   retain their engine-authored classes, colors, ARIA and hitboxes. */
+.board{position:relative}
+.redo-fx-layer{position:absolute;inset:0;pointer-events:none;z-index:2}
+.redo-fx-player{position:absolute;left:0;top:0;display:grid;place-items:center;z-index:2;
+  font-weight:900;font-size:clamp(19px,2vw,28px);line-height:1;
+  color:#112b31;text-shadow:0 1px #e3fcf1;
+  transform:translate3d(0,0,0);
+  transition:transform 170ms cubic-bezier(.22,.8,.32,1)}
+.redo-fx-player[hidden]{display:none}
+.redo-fx-player.redo-fx-no-glide{transition:none!important}
+.board .cell.you .symbol{visibility:hidden}
+.redo-fx-marks{position:absolute;inset:0;pointer-events:none}
+.redo-fx-mark{position:absolute;pointer-events:none;z-index:1;
+  border:2px solid #f0dfad;outline:1px solid #4c3c2a;
+  background:transparent;animation:redo-attack 145ms ease-out both}
+.redo-fx-attack-hit{border:3px solid #f4e2c0;box-shadow:inset 0 0 0 3px #ce8e6466}
+.redo-fx-strike{border:3px dashed #f0c49b;animation:redo-strike 180ms ease-out both}
+.health-track.redo-fx-hit{animation:redo-health 145ms ease-out 1}
+.board-frame.redo-fx-hit{animation:redo-frame-hit 145ms ease-out 1}
+.board-frame.redo-fx-room{animation:redo-room 260ms ease-out 1}
+/* Supersede older infinite telegraph animation: a strong static danger marker
+   always remains. If enabled, only a gentle one-shot halo is animated. */
+.cell.telegraph{animation:none!important;box-shadow:inset 0 0 0 3px #ffe2a3!important}
+.cell.telegraph.redo-warning-once{animation:redo-warn 620ms ease-out 1!important}
+.no-pulse .cell.telegraph.redo-warning-once{animation:none!important}
+@keyframes redo-warn{
+  0%{box-shadow:inset 0 0 0 3px #ffe2a3,0 0 0 0 #e9b879aa}
+  100%{box-shadow:inset 0 0 0 3px #ffe2a3,0 0 0 4px transparent}
+}
+@keyframes redo-attack{from{transform:scale(.82);opacity:.9}to{transform:scale(1);opacity:0}}
+@keyframes redo-strike{from{transform:scale(.92);opacity:1}to{transform:scale(1);opacity:0}}
+@keyframes redo-health{0%,100%{outline:0 solid transparent}45%{outline:3px solid #ffe0b1}}
+@keyframes redo-frame-hit{0%,100%{border-color:#53647799}50%{border-color:#f2c796}}
+@keyframes redo-room{0%{filter:brightness(.85)}100%{filter:brightness(1)}}
+.user-reduced-motion .redo-fx-player,
+.user-reduced-motion .redo-fx-mark,
+.user-reduced-motion .redo-fx-hit,
+.user-reduced-motion .redo-fx-room,
+.user-reduced-motion .cell.telegraph.redo-warning-once{
+  transition:none!important;animation:none!important}
+@media(prefers-reduced-motion:reduce){
+  .redo-fx-player,.redo-fx-mark,.redo-fx-hit,.redo-fx-room,
+  .cell.telegraph.redo-warning-once{transition:none!important;animation:none!important}
+}
+@media(forced-colors:active){
+  .cell.telegraph{outline:3px solid Highlight!important;outline-offset:-3px}
+  .redo-fx-mark{border-color:Highlight}
+}

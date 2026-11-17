@@ -2,7 +2,7 @@
 .godot/
 .import/
 export.cfg
-export_presets.cfg
+!export_presets.cfg
 *.translation
 # OS / IDE
 .DS_Store
