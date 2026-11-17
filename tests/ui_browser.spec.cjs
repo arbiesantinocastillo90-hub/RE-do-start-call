@@ -18,6 +18,8 @@ test('setup, optional memory trace, and keyboard movement remain accessible', as
 
   await page.getByLabel('DIAMOND').check();
   await page.locator('#avatar-tint').selectOption('amber');
+  await expect(page.locator('#avatar-preview-glyph')).toHaveText('◆');
+  await expect(page.locator('#avatar-preview-glyph')).toHaveCSS('color', 'rgb(214, 179, 123)');
   await page.locator('#slow-tells').check();
   await page.locator('#persist-tells').check();
   await page.locator('#effect-scanlines').uncheck();
