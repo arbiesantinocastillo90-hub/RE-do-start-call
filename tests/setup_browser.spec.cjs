@@ -13,7 +13,7 @@ test('settings persist through reload, apply before a run, and never persist gam
   await page.locator('#high-contrast').check();
   await page.locator('#slow-tells').check();
   await page.locator('#sound-level').selectOption('off');
-  await expect(page.locator('#avatar-preview')).toHaveText('✦');
+  await expect(page.locator('#avatar-preview-glyph')).toHaveText('✦');
   await expect(page.locator('#sound-test')).toBeDisabled();
   await page.screenshot({path:'release-setup-desktop.png',fullPage:true});
 
