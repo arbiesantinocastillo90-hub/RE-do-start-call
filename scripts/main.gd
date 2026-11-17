@@ -859,12 +859,12 @@ func _input(event: InputEvent) -> void:
     # A future/native pre-game setup owns all keys until PLAY is chosen.
     if phase == "SETUP":
         return
-    # Focused HUD controls own Enter/Space; don't steal their activation.
-    # Board tiles retain Enter-to-attack, and un-focused Enter confirms the aim.
+    # A focused button (including a board tile) owns Enter/Space.
+    # This preserves tile activation; Space only means HOLD with no button focus.
     var focused := get_viewport().gui_get_focus_owner()
     if focused is LineEdit or focused is TextEdit:
         return
-    if (key.keycode == KEY_SPACE or key.keycode == KEY_ENTER or key.keycode == KEY_KP_ENTER) and focused is BaseButton and not tiles.has(focused):
+    if (key.keycode == KEY_SPACE or key.keycode == KEY_ENTER or key.keycode == KEY_KP_ENTER) and focused is BaseButton:
         return
 
     var handled := true
