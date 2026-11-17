@@ -1,5 +1,45 @@
 # Release A — independent QA, integration and release gate
 
+## Latest verified integration — 2026-11-17 (Agent D, UTC+08)
+
+**Release verdict: NO-GO for human release sign-off.** The integration head independently verified below is `d863ec80eb13a1f92f6d390ad01e794d2dd8f13c`. The pre-integration state was `52b4d47d858c502b816675eeb26b6546cd3be4ab`. Historical entries below remain as dated context; their prior `main` SHAs are **not** the current baseline. The QA-only seeded-test/report PR based on `d863ec80` requires its own passing CI before integration and is not included in the evidence below.
+
+### Reviewed integration decisions and precise diffs
+
+| PR | Review, merge result, risk |
+| --- | --- |
+| [#32](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/pull/32) | **MERGED FIRST**, `c3a6d6049c7df92e50c7f5ffc9462ced52baf600`. +37 lines in `tests/encounter_fairness.test.js` only. Covers Freeze blocking 12 exact warned patterns, the *one* forced skipped move with HOLD/next ATTACK still legal, and manually injected Numb+Comfort refusing heal without trapping ATTACK. No gameplay engine mutation. |
+| [#31](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/pull/31) | **MERGED SECOND**, current `main` `d863ec80eb13a1f92f6d390ad01e794d2dd8f13c`. +148-line Playwright `tests/release_full_run_browser.spec.cjs` and one workflow spec-list addition. Starts actual setup screen, uses 36 rendered tiles and real buttons, waits for *natural* tell timers, reaches two reward screens and demo WIN. It **reads** engine state and pure geometry to choose moves; it does not mutate combat state or fast-forward tells. Automated solver is not novice/manual play. |
+| [#23](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/pull/23) | **CLOSED UNMERGED** as outdated after #28's newer 27-pair/11,340-position coverage, #29 Numb/Flinch parity and #32 narrow Freeze/Comfort test port. Do not overwrite the updated floor/Flinch assumptions with older 15,120-case code merely to increase a numerical count. |
+| [#24](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/pull/24) | **CLOSED UNMERGED** as stale/overlapping. Its safe-reset, accessible menu and mute/volume work were integrated via [#30](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/pull/30). Merging its 13 older files risks rewinding E's effects and C's accessibility work. |
+
+**Determinism review:** The full-DOM Playwright bot takes a varying `Math.random`-derived reward offer by default, and a test run may therefore take a different modifier route. The new QA-only PR pins a test-local seeded RNG *before the page loads* for reproducibility, without scripting any move, enemy hit or reward choice. The separate 60-seed engine autoplay still tests reward diversity. Review/CI must validate this QA-only adjustment before merging.
+
+### Evidence on the *final integrated main*, not only PR heads
+
+| Verification / what was actually executed | Run/job or artifact | Result |
+| --- | --- | --- |
+| Node syntax, **15** engine assertions, **60** seeded three-room victories, **840** exact warned-to-strike cases, **27 compatible modifier pairs / 11,340** strike-status positions, preferences and UI contracts | [Release A 44009646378](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/actions/runs/44009646378), job `133793344941` | **PASS** |
+| Official **Godot 4.4.1** headless editor import, strict script parse, geometry, turn flow, HUD focus/telegraph checks | Same run, job `133793345207` | **PASS (headless, not GUI)** |
+| Real Chromium Playwright UI suite: **12 tests passed (25.2s)** including actual DOM full three-room journey, **15 turns, 12 HP remaining**; browser loaded a local `file://` asset, not live Pages | Same run, job `133793345290`, artifact `release-a-browser-qa` (`14296680338`) | **PASS (automated local UI)** |
+| Windows x64 Godot cross-export plus actual Windows 2022 **headless** PE/`.pck` startup | Same run, jobs `133793756730` and `133794078191`, artifacts `release-a-windows-x64-cross-export` (`14296236738`) and `release-a-windows-runner-evidence` (`14296655603`) | **PASS (not Windows GUI play)** |
+| Additional independent browser accessibility and deterministic web checks | [UI 44009646385](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/actions/runs/44009646385), [web 44009646493](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/actions/runs/44009646493) | **PASS** |
+| Actual Pages `build`, `deploy` and `report-build-status` jobs for this SHA | [Pages 44009646832](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/actions/runs/44009646832), jobs `133793315246`, `133793464264`, `133793464328` | **PASS (deployment, not live gameplay)** |
+| Earlier #31/#32 standalone PR acceptance jobs | [#31 44007037995](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/actions/runs/44007037995), [#32 44007240721](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/actions/runs/44007240721) | **PASS on feature PRs; superseded by final-main run above** |
+
+**Evidence boundaries:** Chromium automated UI successfully completes all three rooms, but **the deployed public Pages URL has not been followed through a real live full run**. Windows CI loads the executable *headlessly* and cannot establish graphics, keyboard/gamepad/mouse interactions, audio, actual GPU frame pacing, or a three-room Windows GUI finish. A successful Pages workflow proves a deployment job, not browser behavior from the deployed URL. The full-DOM solver uses internal read-only state for navigation, so it is not evidence of an inexperienced player independently understanding warnings.
+
+### Still-blocking release acceptance
+
+- **P0, Agent D / release owner:** Run the *live* deployed Pages URL in an actual browser through Title → Rusted Pipe → reward → Melted Hanger → reward → Unanswered Call → demo WIN, including reset/death; capture browser/OS, URL, dated video/screenshots and errors.
+- **P0, Agent D + A:** Download the exact Windows CI artifact, launch visibly on actual Windows hardware, complete three rooms with mouse and keyboard, inspect audio/settings/restart, and record actual machine, Windows build, observed FPS, crashes and media evidence. Headless runner smoke cannot substitute.
+- **P0, Agent D + testers:** Record **10 consecutive complete guided manual playthroughs** without crash/softlock plus **5 first-time novice player evaluations**, with participants' comprehension problems and actual results. Neither gate has been performed or claimed.
+- **P1, C/F:** Review 360px touch/keyboard, screenreader and projector legibility *manually*, though headless automated coverage is green. Avoid full-game scope until all P0 acceptance gates pass.
+
+**Next safe milestone:** merge the reproducible QA-test/ledger PR only if its own CI passes; then capture live-browser and actual Windows GUI/human evidence. **Do not tag this as a verified consumer release.**
+
+---
+
 > **CURRENT INTEGRATION ADDENDUM (2026-11-17 UTC+08).** The historical audit below captures the earlier pre-integration state. **Merged main after PRs #12, #9, #14, #17, and #18:** `384a6605ec0f922fba0c91d2d16a648f7206f32d`. Source-of-truth baseline, native Godot parse and turn-lock repairs, C/F pre-game menus and quiet HUD, B encounter parity/fairness, and E motion/audio + D cross-platform release workflow are now integrated. **Integrated PR #18's job [44004263671](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/actions/runs/44004263671) passed** Linux Godot 4.4.1 import/turn tests, Node, real Chromium, Windows x64 cross-export and Windows 2022 headless launch. **The integrated `main` SHA `384a6605ec0f922fba0c91d2d16a648f7206f32d` has now PASSED the complete automated Release A workflow [run 44004831634](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/actions/runs/44004831634): Node rules, Chromium keyboard/touch/360px/reduced-motion, Godot 4.4.1 native import/turn tests, Windows x64 cross-export, and actual Windows 2022 headless startup.** The same main SHA's GitHub Pages build [run 44004831360](https://github.com/arbiesantinocastillo90-hub/RE-do-start-call/actions/runs/44004831360) succeeded. **MANUAL WINDOWS GUI GAMEPLAY, ten consecutive complete runs and five novice testers are still NOT VERIFIED.** **Release verdict remains CONDITIONAL / NOT HUMAN SIGNED OFF** until Windows GUI three-room gameplay, five first-time-player evaluations and the 10-run manual softlock check are recorded. Older PR references in the historical log describe superseded integration paths, not current main defects. 
 
 

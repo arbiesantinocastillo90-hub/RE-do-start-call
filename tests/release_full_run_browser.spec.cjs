@@ -14,6 +14,13 @@ test('finish all three rooms via real browser controls without injecting gamepla
   page.on('console', message => {
     if (message.type() === 'error') errors.push('console: ' + message.text());
   });
+  // The engine's default reward RNG is Math.random. Fix the UI test seed so
+  // runs can be reproduced exactly; 60-seed engine autoplay covers variety.
+  // This does not mutate combat state or bypass any visible input/tell timer.
+  await page.addInitScript(() => {
+    let seed = 0x5eed2026;
+    Math.random = () => ((seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / 0x100000000);
+  });
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto(url);
   await expect(page.locator('#setup-options')).toBeVisible();
