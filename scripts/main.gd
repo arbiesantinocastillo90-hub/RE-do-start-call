@@ -780,13 +780,7 @@ func _refresh() -> void:
                 tile_description += ": " + str(room["enemy"])
             else:
                 tile_description += ": empty"
-            if warned.has(cell) and (phase == "TELL" or retain_warnings):
-                tile_description += "; next strike warning"
-            if ground.has(cell):
-                for effect in ground[cell]:
-                    tile_description += "; %s %s lingering effect" % [str(effect["source"]), str(effect["kind"])]
-            if phase == "MOVE" and Pattern.distance(player, cell) == 1 and cell != enemy:
-                tile_description += "; legal move, not necessarily safe"
+            # Keep tooltip text neutral. Tactical hints belong behind MEMORY TRACE.
             button.tooltip_text = tile_description
             var ink := Color("#101827") if cell == player or paint == Color("#e8a45d") else Color("#f8f8ff")
             button.add_theme_color_override("font_color", ink)
