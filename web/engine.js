@@ -132,7 +132,11 @@
       this.warningIds = new Set(this.warning.cells.map(id));
       this.tellVisible = true;
       const seconds = Math.max(.30, this.room.tell + (this.has('hyper') ? .45 : 0) - (this.has('tunnel') ? .18 : 0));
-      this.tellDuration = this.slowTells ? Math.max(2.5, seconds * 1.8) : seconds;
+      // Use a readable baseline before modifier deltas, so Hypervigilance and
+      // Tunnel Vision keep their promised ±time tradeoffs in accessibility mode.
+      this.tellDuration = this.slowTells
+        ? Math.max(2.5, 3 + (this.has('hyper') ? .45 : 0) - (this.has('tunnel') ? .18 : 0))
+        : seconds;
       const ticket = ++this.generation;
       this.log(`STATIC: ${this.warning.name}. Remember the amber squares.`);
       this.notify();
