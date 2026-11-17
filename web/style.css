@@ -3,3 +3,23 @@
 
 /* Ensure warnings remain visible even when the threatened tile is occupied. */
 .cell.you.telegraph,.cell.enemy.telegraph{background:#e5a35b!important;color:#142432!important;box-shadow:inset 0 0 0 3px #ffdd9f!important}
+
+/* Agent C: projector legibility, accessible target feedback and non-color-only warnings. */
+.board:focus-visible{outline:3px solid var(--teal);outline-offset:5px}
+.cell .coord{font-size:10px;color:#c4d0df}
+.cell .name{font-size:10px;letter-spacing:.03em}
+.board-legend{font-size:11px;color:#c4cfdd}
+.room-line{font-size:14px}
+.cell.move-option:not(.you):not(.enemy){outline:2px solid #8cbecd;outline-offset:-4px}
+.cell:focus-visible{outline:3px solid #e8eef2;outline-offset:-4px;z-index:3}
+.cell.you.telegraph::after,.cell.enemy.telegraph::after,.cell.you.ghost::after,.cell.enemy.ghost::after{content:"!";position:absolute;right:2px;top:1px;z-index:4;font-size:14px;font-weight:900;color:#fff5d6;background:#6b3430;border:1px solid #ffdd9f;padding:0 4px;line-height:1.2;pointer-events:none}
+.cell.you.ghost{box-shadow:inset 0 0 0 3px #e3ae6d,inset 0 0 0 6px #bdebd0}
+.cell.ghost.move-option{outline:2px solid #e3ae6d;outline-offset:-4px}
+.cell.danger-ground:not(.telegraph):not(.you):not(.enemy){background:repeating-linear-gradient(135deg,#654345 0 8px,#815351 8px 11px)}
+.cell.player-ground:not(.telegraph):not(.you):not(.enemy){background:repeating-linear-gradient(45deg,#3c565c 0 8px,#56818a 8px 11px)}
+@media (max-width:560px){.cell .coord{font-size:9px}.cell .name{font-size:8px}.board-legend{font-size:10px}}
+@media (prefers-reduced-motion:reduce){.cell.telegraph{animation:none}.cell,button{transition:none}}
+.cell.you .coord,.cell.telegraph .coord{color:#172330}
+.cell.enemy:not(.telegraph) .coord{color:#fff1f6}
+.card-heading{font-size:11px}
+.instruction{font-size:13px}

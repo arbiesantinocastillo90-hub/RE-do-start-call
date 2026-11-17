@@ -6,7 +6,7 @@ const Pattern = preload("res://scripts/attack_patterns.gd")
 const Encounters = preload("res://scripts/encounter_data.gd")
 const Mods = preload("res://scripts/modifiers.gd")
 const SIZE := 6
-const CELL := Vector2(80, 80)
+const CELL := Vector2(74, 74)
 
 var rng := RandomNumberGenerator.new()
 var room_index := 0
@@ -31,7 +31,10 @@ var slowed := false
 var freeze_armed := false
 var freeze_ready := false
 var flinch_ready := false
-var muted_tells := false
+var longer_tells := false
+var retain_warnings := false
+var tell_duration := 0.0
+var aim := Vector2i(-1, -1)
 
 var tiles: Array[Button] = []
 var title_label: Label
@@ -62,8 +65,7 @@ func _start_run() -> void:
     owned.clear()
     log_lines.clear()
     attack = "Jab"
-    muted_tells = false
-    _log("You open your eyes. The house looks familiar, but it does not remember you.")
+    _log("You open your eyes. A house made of remembered rooms waits ahead.")
     _start_room(0)
 
 func _start_room(index: int) -> void:
@@ -82,7 +84,7 @@ func _start_room(index: int) -> void:
     freeze_armed = false
     skip_move = false
     slowed = false
-    muted_tells = false
+    aim = player
     reward_box.visible = false
     overlay_label.visible = false
     _log("ROOM %d · %s" % [index + 1, room["name"]])
@@ -105,6 +107,10 @@ func _announce_tell() -> void:
     if owned.has("tunnel"):
         duration -= 0.18
     duration = maxf(duration, 0.30)
+    if longer_tells:
+        # A 3-second baseline preserves both +/- time modifiers and remains readable.
+        duration = maxf(2.5, 3.0 + (0.45 if owned.has("hyper") else 0.0) - (0.18 if owned.has("tunnel") else 0.0))
+    tell_duration = duration
     _log("STATIC: %s. Watch the threatened squares." % str(attack_info["name"]))
     _refresh()
     await get_tree().create_timer(duration).timeout
@@ -112,7 +118,7 @@ func _announce_tell() -> void:
         return
     tell_visible = false
     phase = "MOVE"
-    _log("The warning disappears. Remember the squares before you step.")
+    _log("The warning remains outlined." if retain_warnings else "The warning disappears. Remember the squares before you step.")
     _refresh()
 
 func _tile_pressed(cell: Vector2i) -> void:
@@ -138,6 +144,7 @@ func _try_move(cell: Vector2i) -> void:
         return
     player = cell
     phase = "ATTACK"
+    aim = player
     _log("You steady yourself. Choose an attack and its target.")
     _refresh()
 
@@ -147,6 +154,7 @@ func _hold() -> void:
     skip_move = false
     slowed = false
     phase = "ATTACK"
+    aim = player
     _log("You keep your footing.")
     _refresh()
 
@@ -332,17 +340,29 @@ func _room_cleared() -> void:
     header.text = "A COPING MECHANISM\nChoose one. Every survival habit has a cost."
     header.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     reward_box.add_child(header)
+    var first_choice: Button = null
     for entry in options:
         var b := Button.new()
+        if first_choice == null:
+            first_choice = b
         b.custom_minimum_size.y = 88
-        b.text = "%s\n+ %s\n− %s" % [entry["name"], entry["boon"], entry["cost"]]
+        b.text = "%s\nBENEFIT: %s\nCOST: %s" % [entry["name"], entry["boon"], entry["cost"]]
         b.add_theme_font_size_override("font_size", 14)
         b.pressed.connect(_take_modifier.bind(str(entry["id"])))
         reward_box.add_child(b)
     _refresh()
+    if first_choice != null:
+        first_choice.call_deferred("grab_focus")
 
 func _take_modifier(id: String) -> void:
     if phase != "REWARD" or owned.has(id):
+        return
+    var offered := false
+    for entry in options:
+        if str(entry["id"]) == id:
+            offered = true
+            break
+    if not offered:
         return
     owned.append(id)
     if id == "bracing":
@@ -380,11 +400,11 @@ func _build_ui() -> void:
     add_child(margin)
 
     var columns := HBoxContainer.new()
-    columns.add_theme_constant_override("separation", 34)
+    columns.add_theme_constant_override("separation", 24)
     margin.add_child(columns)
 
     var left := VBoxContainer.new()
-    left.custom_minimum_size.x = 535
+    left.custom_minimum_size.x = 500
     left.add_theme_constant_override("separation", 14)
     columns.add_child(left)
 
@@ -424,13 +444,13 @@ func _build_ui() -> void:
     left.add_child(instructions_label)
 
     var right_scroll := ScrollContainer.new()
-    right_scroll.custom_minimum_size.x = 470
+    right_scroll.custom_minimum_size.x = 430
     right_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     right_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
     right_scroll.follow_focus = true
     columns.add_child(right_scroll)
     var right := VBoxContainer.new()
-    right.custom_minimum_size.x = 444
+    right.custom_minimum_size.x = 416
     right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     right.add_theme_constant_override("separation", 13)
     right_scroll.add_child(right)
@@ -446,6 +466,21 @@ func _build_ui() -> void:
     phase_label.add_theme_font_size_override("font_size", 19)
     phase_label.add_theme_color_override("font_color", Color("#fbbe88"))
     right.add_child(phase_label)
+
+    var accessibility_row := VBoxContainer.new()
+    right.add_child(accessibility_row)
+    var longer_toggle := CheckBox.new()
+    longer_toggle.text = "LONGER WARNINGS (AT LEAST 2.5 S)"
+    longer_toggle.tooltip_text = "Applies from the next warning phase."
+    longer_toggle.button_pressed = longer_tells
+    longer_toggle.toggled.connect(_set_longer_tells)
+    accessibility_row.add_child(longer_toggle)
+    var retain_toggle := CheckBox.new()
+    retain_toggle.text = "KEEP THREAT OUTLINES"
+    retain_toggle.tooltip_text = "Retain the exact threatened tiles during movement and attack."
+    retain_toggle.button_pressed = retain_warnings
+    retain_toggle.toggled.connect(_set_retain_warnings)
+    accessibility_row.add_child(retain_toggle)
 
     var attacks := HBoxContainer.new()
     attacks.add_theme_constant_override("separation", 8)
@@ -504,10 +539,24 @@ func _build_ui() -> void:
     right.add_child(restart_button)
 
     var footer := Label.new()
-    footer.text = "Mouse or arrows to move · 1/2/3 select attack · click target"
+    footer.text = "Arrows move / aim · Enter or click target · 1/2/3 attack"
     footer.add_theme_font_size_override("font_size", 12)
     footer.add_theme_color_override("font_color", Color("#67728a"))
     right.add_child(footer)
+
+func _set_longer_tells(value: bool) -> void:
+    longer_tells = value
+    _refresh()
+
+func _set_retain_warnings(value: bool) -> void:
+    retain_warnings = value
+    _refresh()
+
+func _aim(delta: Vector2i) -> void:
+    var next := aim + delta
+    if Pattern.inside(next):
+        aim = next
+        _refresh()
 
 func _refresh() -> void:
     if tiles.is_empty():
@@ -517,13 +566,13 @@ func _refresh() -> void:
     match phase:
         "TELL":
             phase_label.text = "[ STATIC / WARNING ]"
-            instructions_label.text = "Memorize the flashing amber squares. The threat will disappear before your move."
+            instructions_label.text = "Watch the amber danger tiles for %.2f seconds. %s" % [tell_duration, "Outlines will remain." if retain_warnings else "The flash disappears before movement."]
         "MOVE":
             phase_label.text = "[ HYPERVIGILANCE / MOVE ]"
-            instructions_label.text = "Step one square up, down, left or right. Hold with SPACE. Remember the attack before choosing."
+            instructions_label.text = "Step one cardinal tile, or hold with SPACE. " + ("Amber outlines show the next strike." if retain_warnings else "Remember the danger flash.")
         "ATTACK":
             phase_label.text = "[ FIGHT / ATTACK ]"
-            instructions_label.text = "Choose JAB (adjacent), SWEEP (straight ray), or BURST (plus) and click a target tile. Your attacks leave traces."
+            instructions_label.text = "Choose JAB, SWEEP or BURST. Arrows aim; Enter or click attacks. White outlines preview your attack shape."
         "RESOLVE":
             phase_label.text = "[ THE MEMORY STRIKES ]"
             instructions_label.text = "Your action resolves. Danger tiles are the ones you saw during the flash."
@@ -536,6 +585,9 @@ func _refresh() -> void:
         _:
             phase_label.text = "[ LOOP INTERRUPTED ]"
             instructions_label.text = "You can try again. Press R or RESTART THE LOOP."
+    var preview: Array[Vector2i] = []
+    if phase == "ATTACK" and Pattern.inside(aim):
+        preview = Pattern.cells_for(attack, player, aim)
     for y in range(SIZE):
         for x in range(SIZE):
             var cell := Vector2i(x,y)
@@ -554,14 +606,32 @@ func _refresh() -> void:
                 text = str(room["glyph"])
                 if phase == "TELL" and tell_visible and warned.has(cell):
                     paint = Color("#e8a45d")
+                    text += "\n!"
             if cell == player:
                 paint = Color("#81c6b3")
                 text = "YOU"
                 if phase == "TELL" and tell_visible and warned.has(cell):
                     paint = Color("#e8a45d")
-                    text = "YOU !"
+                    text = "YOU\n!"
+            if retain_warnings and (phase == "MOVE" or phase == "ATTACK") and warned.has(cell):
+                text += (" !" if text != "" else "!")
             button.text = text
             button.disabled = phase != "MOVE" and phase != "ATTACK"
+            var tile_description := "Tile %s%d" % ["ABCDEF".substr(x, 1), y + 1]
+            if cell == player:
+                tile_description += ": you"
+            elif cell == enemy and enemy_hp > 0:
+                tile_description += ": " + str(room["enemy"])
+            else:
+                tile_description += ": empty"
+            if warned.has(cell) and (phase == "TELL" or retain_warnings):
+                tile_description += "; next strike warning"
+            if ground.has(cell):
+                for effect in ground[cell]:
+                    tile_description += "; %s %s lingering effect" % [str(effect["source"]), str(effect["kind"])]
+            if phase == "MOVE" and Pattern.distance(player, cell) == 1 and cell != enemy:
+                tile_description += "; legal move, not necessarily safe"
+            button.tooltip_text = tile_description
             var ink := Color("#101827") if cell == player or paint == Color("#e8a45d") else Color("#f8f8ff")
             button.add_theme_color_override("font_color", ink)
             button.add_theme_color_override("font_disabled_color", ink)
@@ -570,6 +640,15 @@ func _refresh() -> void:
             normal.set_corner_radius_all(5)
             normal.border_width_bottom = 2
             normal.border_color = paint.lightened(0.18)
+            if phase == "MOVE" and Pattern.distance(player, cell) == 1 and cell != enemy:
+                normal.set_border_width_all(2)
+                normal.border_color = Color("#8cbecd")
+            if phase == "ATTACK" and preview.has(cell):
+                normal.set_border_width_all(3)
+                normal.border_color = Color("#d7f1f2")
+            if retain_warnings and (phase == "MOVE" or phase == "ATTACK") and warned.has(cell):
+                normal.set_border_width_all(4)
+                normal.border_color = Color("#ffd09a")
             button.add_theme_stylebox_override("normal", normal)
             button.add_theme_stylebox_override("hover", normal)
             button.add_theme_stylebox_override("pressed", normal)
@@ -617,9 +696,15 @@ func _unhandled_key_input(event: InputEvent) -> void:
             _use_freeze()
         KEY_UP:
             if phase == "MOVE": _try_move(player + Vector2i.UP)
+            elif phase == "ATTACK": _aim(Vector2i.UP)
         KEY_DOWN:
             if phase == "MOVE": _try_move(player + Vector2i.DOWN)
+            elif phase == "ATTACK": _aim(Vector2i.DOWN)
         KEY_LEFT:
             if phase == "MOVE": _try_move(player + Vector2i.LEFT)
+            elif phase == "ATTACK": _aim(Vector2i.LEFT)
         KEY_RIGHT:
             if phase == "MOVE": _try_move(player + Vector2i.RIGHT)
+            elif phase == "ATTACK": _aim(Vector2i.RIGHT)
+        KEY_ENTER, KEY_KP_ENTER:
+            if phase == "ATTACK": _try_attack(aim)

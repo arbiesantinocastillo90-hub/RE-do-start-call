@@ -8,6 +8,8 @@
   let hover = null;
   let showStart = true;
   let currentModal = 'intro';
+  const shellEl = $('.shell');
+  shellEl.inert = true;
   const phaseText = {
     TELL: 'STATIC / WATCH', MOVE: 'READ / MOVE', ATTACK: 'ACT / ATTACK',
     RESOLVE: 'STRIKE / RESOLVE', REWARD: 'REFLECTION / CHOOSE', WIN: 'DEMO / COMPLETE', DEAD: 'LOOP / RESET'
@@ -17,7 +19,6 @@
       const c = p(x, y);
       const button = document.createElement('button');
       button.type = 'button'; button.className = 'cell'; button.dataset.x = String(x); button.dataset.y = String(y);
-      button.setAttribute('role', 'gridcell');
       button.innerHTML = `<span class="coord">${'ABCDEF'[x]}${y + 1}</span><span class="symbol"></span><span class="name"></span>`;
       button.addEventListener('click', () => {
         if (!game) return;
@@ -26,6 +27,8 @@
       });
       button.addEventListener('mouseenter', () => { hover = c; if (game) drawBoard(game); });
       button.addEventListener('mouseleave', () => { hover = null; if (game) drawBoard(game); });
+      button.addEventListener('focus', () => { hover = c; if (game) drawBoard(game); });
+      button.addEventListener('blur', () => { hover = null; if (game) drawBoard(game); });
       boardEl.append(button); tiles.push(button);
     }
   }
@@ -41,11 +44,15 @@
         + (shown && s.phase === 'TELL' ? ' telegraph' : '') + (shown && s.phase !== 'TELL' ? ' ghost' : '')
         + (info.enemy ? ' enemy' : '') + (info.player ? ' you' : '')
         + (preview.has(id(c)) ? ' preview' : '')
-        + (s.phase === 'MOVE' && distance(c, s.player) === 1 && !info.enemy ? ' safe-option' : '');
+        + (s.phase === 'MOVE' && distance(c, s.player) === 1 && !info.enemy ? ' move-option' : '');
       tile.disabled = !['MOVE', 'ATTACK'].includes(s.phase);
       tile.querySelector('.symbol').textContent = info.player ? '◉' : info.enemy ? s.room.symbol : shown ? '!' : enemyGround ? '▒' : playerGround ? '∙' : '';
       tile.querySelector('.name').textContent = info.player ? 'YOU' : info.enemy ? 'MEMORY' : shown ? 'DANGER' : '';
-      tile.setAttribute('aria-label', `${'ABCDEF'[x]}${y + 1}: ${info.player ? 'you' : info.enemy ? s.room.enemy : shown ? 'incoming danger' : enemyGround ? 'harmful ground' : playerGround ? 'your lingering attack' : 'empty'}`);
+      const details = [info.player ? 'you' : info.enemy ? s.room.enemy : 'empty'];
+      if (shown) details.push(s.phase === 'TELL' ? 'next enemy strike' : 'retained next-strike outline');
+      for (const effect of statuses) details.push((effect.owner === 'enemy' ? 'enemy ' : 'your ') + effect.kind + ' lingering tile');
+      if (s.phase === 'MOVE' && distance(c, s.player) === 1 && !info.enemy) details.push('legal move; not necessarily safe');
+      tile.setAttribute('aria-label', 'Tile ' + 'ABCDEF'[x] + (y + 1) + ': ' + details.join('; '));
     }
   }
   function render(s) {
@@ -62,7 +69,7 @@
     $('#phase-pill').textContent = phaseText[s.phase] || 'UNKNOWN';
     $('#choice-step').textContent = s.phase === 'MOVE' ? 'MOVE → ATTACK' : s.phase === 'ATTACK' ? 'AIM → STRIKE' : s.phase === 'TELL' ? 'WATCH → REMEMBER' : '•••';
     $('#instruction').textContent = s.phase === 'TELL' ? `Watch the flash for ${s.tellDuration.toFixed(2)} seconds. Then remember where it was.`
-      : s.phase === 'MOVE' ? (s.skipMove || s.slowed ? 'Movement unavailable this turn. Use HOLD.' : 'Choose one neighboring tile, or hold position. Recall the vanished danger tiles.')
+      : s.phase === 'MOVE' ? (s.skipMove || s.slowed ? 'Movement unavailable this turn. Use HOLD.' : ('Choose one neighboring tile, or hold position. ' + (s.persistTells ? 'Amber outlines show the next strike.' : 'Recall the vanished danger tiles.')))
       : s.phase === 'ATTACK' ? 'Choose an attack shape, then click a valid target. Your attack leaves a 2-turn tile effect.'
       : s.phase === 'REWARD' ? 'A choice between rooms. Each modifier helps and harms.'
       : s.phase === 'WIN' ? 'The phone falls silent. You survived the three-room demonstration.'
@@ -97,10 +104,16 @@
     $('#modal-primary').onclick = action;
     $('#modal-choices').replaceChildren();
     $('#modal-primary').hidden = false;
+    shellEl.inert = true;
     $('#modal').hidden = false;
     $('#modal-primary').focus();
   }
-  function hideModal() { $('#modal').hidden = true; currentModal = ''; }
+  function hideModal() {
+    if ($('#modal').hidden) return;
+    $('#modal').hidden = true; currentModal = '';
+    shellEl.inert = false;
+    boardEl.focus({ preventScroll: true });
+  }
   function begin() {
     showStart = false;
     currentModal = '';
@@ -117,13 +130,14 @@
     for (const m of s.rewardOptions) {
       const btn = document.createElement('button'); btn.className = 'reward'; btn.type = 'button';
       const heading = document.createElement('strong'); heading.textContent = `${m.badge}  ${m.name}`;
-      const boon = document.createElement('span'); boon.textContent = `+ ${m.boon}`;
-      const cost = document.createElement('small'); cost.textContent = `– ${m.cost}`;
+      const boon = document.createElement('span'); boon.textContent = `Benefit: ${m.boon}`;
+      const cost = document.createElement('small'); cost.textContent = `Cost: ${m.cost}`;
       btn.append(heading, boon, cost);
-      btn.onclick = () => { currentModal = ''; hideModal(); game.takeModifier(m.id); };
+      btn.onclick = () => { if (game.takeModifier(m.id)) hideModal(); };
       list.append(btn);
     }
     $('#modal-choices').append(list);
+    list.querySelector('button')?.focus();
   }
   function showEnd(s, won) {
     currentModal = won ? 'win' : 'dead';
@@ -141,17 +155,41 @@
   $('#slow-tells').addEventListener('change', () => game?.setAccessibility({ slowTells: $('#slow-tells').checked }));
   $('#persist-tells').addEventListener('change', () => game?.setAccessibility({ persistTells: $('#persist-tells').checked }));
   $('#modal-primary').onclick = begin;
+  $('#modal-primary').focus();
   document.addEventListener('keydown', e => {
+    if (!$('#modal').hidden) {
+      if (e.key === 'Tab') {
+        const focusables = [...$('#modal').querySelectorAll('button:not([hidden]):not(:disabled)')];
+        if (!focusables.length) { e.preventDefault(); return; }
+        const first = focusables[0], last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+      return; // Never let movement, attack or reset shortcuts affect a modal choice.
+    }
     if (!game || (e.target instanceof HTMLInputElement)) return;
     const move = { ArrowUp: p(0,-1), ArrowDown: p(0,1), ArrowLeft: p(-1,0), ArrowRight: p(1,0) };
-    if (e.key in move) { e.preventDefault(); if (game.phase === 'MOVE') game.move(p(game.player.x + move[e.key].x, game.player.y + move[e.key].y)); }
-    if (e.key === ' ') { e.preventDefault(); game.hold(); }
+    if (e.key in move) {
+      e.preventDefault();
+      const delta = move[e.key];
+      if (game.phase === 'MOVE') {
+        const next = p(game.player.x + delta.x, game.player.y + delta.y);
+        if (game.move(next)) tiles[next.y * SIZE + next.x].focus();
+      } else if (game.phase === 'ATTACK') {
+        const focused = document.activeElement instanceof HTMLElement ? document.activeElement.closest('.cell') : null;
+        const origin = focused ? p(Number(focused.dataset.x), Number(focused.dataset.y)) : game.player;
+        const next = p(origin.x + delta.x, origin.y + delta.y);
+        if (next.x >= 0 && next.x < SIZE && next.y >= 0 && next.y < SIZE) tiles[next.y * SIZE + next.x].focus();
+      }
+    }
+    // Let focused buttons keep native Space/Enter activation (including tile attacks).
+    if (e.key === ' ' && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); game.hold(); }
     if (e.key === '1') game.selectAttack('Jab');
     if (e.key === '2') game.selectAttack('Sweep');
     if (e.key === '3') game.selectAttack('Burst');
     if (e.key.toLowerCase() === 'e') game.comfort();
     if (e.key.toLowerCase() === 'f') game.freeze();
-    if (e.key.toLowerCase() === 'r') { currentModal = ''; hideModal(); game.startRun(); }
+    if (e.key.toLowerCase() === 'r') { hideModal(); game.startRun(); }
   });
   window.__redo = { get game() { return game; }, begin }; // Test-only inspector; not a cheat UI.
 })();
