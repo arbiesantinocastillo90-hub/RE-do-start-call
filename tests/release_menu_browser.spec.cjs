@@ -94,3 +94,52 @@ test('blocked localStorage getter cannot break pregame selection or launch', asy
   });
   expect(errors).toEqual([]);
 });
+
+
+test('tab hidden during a warning pauses that exact tell until it can be seen', async ({ page }) => {
+  // Virtual time makes the 0.95-second Rusted Pipe warning deterministic.
+  await page.clock.install();
+  await page.goto(url);
+  await page.locator('#modal-primary').click();
+
+  const original = await page.evaluate(() => ({
+    phase: window.__redo.game.phase,
+    turn: window.__redo.game.turn,
+    warned: [...window.__redo.game.warningIds].sort()
+  }));
+  expect(original.phase).toBe('TELL');
+  await expect(page.locator('.cell.telegraph')).toHaveCount(original.warned.length);
+
+  // Model the Page Visibility API without needing a second browser window.
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await page.clock.runFor(1400); // Longer than the unpaused 950ms tell.
+  expect(await page.evaluate(() => window.__redo.game.phase)).toBe('TELL');
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  const resumed = await page.evaluate(() => ({
+    phase: window.__redo.game.phase,
+    turn: window.__redo.game.turn,
+    warned: [...window.__redo.game.warningIds].sort()
+  }));
+  expect(resumed).toEqual(original); // Never regenerate or reveal a new pattern.
+  await expect(page.locator('.cell.telegraph')).toHaveCount(original.warned.length);
+
+  await page.clock.runFor(800);
+  expect(await page.evaluate(() => window.__redo.game.phase)).toBe('TELL');
+  await page.clock.runFor(180);
+  expect(await page.evaluate(() => window.__redo.game.phase)).toBe('MOVE');
+  await expect(page.locator('.cell.telegraph')).toHaveCount(0);
+  // Background/foreground transitions after the warning must not reveal it.
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  expect(await page.evaluate(() => window.__redo.game.phase)).toBe('MOVE');
+});
