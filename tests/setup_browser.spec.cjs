@@ -7,7 +7,7 @@ test('settings persist through reload, apply before a run, and never persist gam
   await page.setViewportSize({width: 1280, height: 800});
   await page.goto(url);
   await expect(page.locator('#modal')).toBeVisible();
-  await page.getByLabel('STAR').check();
+  await page.locator('input[name="avatar-shape"][value="star"]').check();
   await page.locator('#avatar-tint').selectOption('lilac');
   await page.locator('#reduce-motion').check();
   await page.locator('#high-contrast').check();
@@ -35,7 +35,7 @@ test('settings persist through reload, apply before a run, and never persist gam
   expect(state.stored).not.toHaveProperty('roomIndex');
   expect(state.turn).toBe(0);
   await page.reload();
-  await expect(page.getByLabel('STAR')).toBeChecked();
+  await expect(page.locator('input[name="avatar-shape"][value="star"]')).toBeChecked();
   await expect(page.locator('#sound-level')).toHaveValue('off');
   await expect(page.locator('#reduce-motion')).toBeChecked();
   await expect(page.locator('#high-contrast')).toBeChecked();
