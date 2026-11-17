@@ -52,6 +52,15 @@ func _run() -> void:
     _check(not game.get("tell_visible"), "Warning flash hides before movement")
     _check(game.get("warned") == warned_initial, "Hidden strike coordinates stay locked")
 
+    # The board itself is keyboard focusable. Space must not secretly HOLD.
+    # _press tests _input ownership; GUI activation is a separate manual check.
+    var board_tiles: Array = game.get("tiles")
+    var focused_move_tile: Button = board_tiles[14] # (2,2)
+    focused_move_tile.grab_focus()
+    _press(game, KEY_SPACE)
+    _check(game.get("phase") == "MOVE", "Space on focused board tile does not HOLD")
+    focused_move_tile.release_focus()
+
     game.call("_try_move", Vector2i(2, 3))
     _check(game.get("phase") == "MOVE", "Diagonal attempt cannot spend movement")
     game.call("_select_attack", "Unknown")
@@ -80,6 +89,12 @@ func _run() -> void:
     _check(game.get("phase") == "ATTACK", "Enter on focused HUD button does not fire")
     _check(game.get("round_turn") == 0, "Focused control cannot spend a combat turn")
     focused_action.release_focus()
+    var focused_attack_tile: Button = board_tiles[16] # (4,2), current enemy
+    focused_attack_tile.grab_focus()
+    _press(game, KEY_ENTER)
+    _check(game.get("phase") == "ATTACK", "Enter on focused board tile is GUI-owned")
+    _check(game.get("round_turn") == 0, "Focused board tile cannot spend hidden turn")
+    focused_attack_tile.release_focus()
     _press(game, KEY_ENTER)
 
     _check(game.get("round_turn") == 1, "Valid attack resolves one enemy turn")
