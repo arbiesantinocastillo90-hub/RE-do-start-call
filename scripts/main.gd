@@ -52,6 +52,7 @@ var restart_button: Button
 var reward_box: VBoxContainer
 var overlay_label: Label
 var options: Array[Dictionary] = []
+var left_scroll: ScrollContainer
 var clue_button: Button
 var clue_details: VBoxContainer
 var clue_hint: Label
@@ -347,6 +348,7 @@ func _room_cleared() -> void:
     if room_index >= 2:
         phase = "WIN"
         overlay_label.visible = true
+        left_scroll.call_deferred("ensure_control_visible", overlay_label)
         overlay_label.text = "DEMO COMPLETE\n\nThe phone falls silent.\nReaching out is not the same as giving in.\n\nYou survived the house.\nPress RESTART to play again."
         reward_box.visible = false
         _refresh()
@@ -398,6 +400,7 @@ func _on_death() -> void:
     tell_visible = false
     reward_box.visible = false
     overlay_label.visible = true
+    left_scroll.call_deferred("ensure_control_visible", overlay_label)
     overlay_label.text = "THE LOOP RESTARTS\n\nA room goes quiet. You wake in the hallway.\nThere is still another attempt.\n\nPress RESTART."
     _refresh()
 
@@ -423,7 +426,7 @@ func _build_ui() -> void:
     columns.add_theme_constant_override("separation", 24)
     margin.add_child(columns)
 
-    var left_scroll := ScrollContainer.new()
+    left_scroll = ScrollContainer.new()
     left_scroll.custom_minimum_size.x = 510
     left_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     left_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
