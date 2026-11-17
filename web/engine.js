@@ -215,7 +215,10 @@
       this.tiles.set(key, entries);
     }
     harmful(cell) {
-      return (this.tiles.get(id(cell)) || []).some(e => e.owner === 'enemy' || (e.owner === 'player' && this.has('fight')));
+      return (this.tiles.get(id(cell)) || []).some(e => {
+        if (e.owner === 'enemy') return e.kind === 'drip' || !this.has('numb');
+        return e.owner === 'player' && this.has('fight') && !this.has('numb');
+      });
     }
     tickGround() {
       const survivor = new Map();
