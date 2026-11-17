@@ -35,6 +35,8 @@
   let pinned = false;
   let peekDismissed = false;
   let lastAnnouncement = '';
+  let resetFocus = null;
+  let resetDuringTell = false;
   shellEl.inert = true;
 
   for (let y = 0; y < SIZE; y++) {
@@ -204,6 +206,8 @@
     $('#modal-primary').textContent = primary;
     $('#modal-primary').onclick = action;
     $('#modal-primary').hidden = false;
+    $('#modal-secondary').hidden = true;
+    $('#modal-secondary').onclick = null;
     $('#modal').dataset.view = setup ? 'setup' : 'dialog';
     $('#setup-options').hidden = !setup;
     $('#modal-choices').replaceChildren();
@@ -212,12 +216,13 @@
     syncPeek();
     (setup ? $('#setup-options input[name="avatar-shape"]:checked') : $('#modal-primary')).focus();
   }
-  function hideModal() {
+  function hideModal(focusTarget = boardEl) {
     if ($('#modal').hidden) return;
     $('#modal').hidden = true;
     currentModal = '';
     shellEl.inert = false;
-    boardEl.focus({ preventScroll: true });
+    const target = focusTarget && focusTarget.isConnected ? focusTarget : boardEl;
+    target.focus({ preventScroll: true });
     syncPeek();
   }
 
@@ -234,7 +239,9 @@
       pulse: $('#effect-pulse').checked,
       highContrast: $('#high-contrast').checked,
       reduceMotion: $('#reduce-motion').checked,
-      sound: $('#sound-level').value
+      sound: $('#sound-level').value,
+      volume: Number($('#sound-volume').value),
+      muted: $('#mute-sound').checked
     });
   }
 
@@ -249,6 +256,8 @@
     $('#high-contrast').checked = settings.highContrast;
     $('#reduce-motion').checked = settings.reduceMotion;
     $('#sound-level').value = settings.sound;
+    $('#sound-volume').value = String(settings.volume);
+    $('#mute-sound').checked = settings.muted;
   }
 
   function applySettings(value) {
@@ -265,7 +274,8 @@
     $('#avatar-preview-copy').textContent = avatarNames[settings.avatar] + ' / ' + tintNames[settings.tint].split(' / ')[0];
     $('#avatar-preview').setAttribute('aria-label',
       'Character preview: ' + settings.avatar + ' in ' + tintNames[settings.tint].toLowerCase());
-    $('#sound-test').disabled = settings.sound === 'off';
+    $('#sound-volume-display').textContent = settings.volume + '%';
+    $('#sound-test').disabled = Prefs.soundGain(settings) === 0;
     // Agent E can listen for sound and motion preferences without owning this menu.
     window.dispatchEvent(new CustomEvent('redo:preferenceschange', { detail: { ...settings } }));
   }
@@ -276,7 +286,7 @@
   }
 
   function playMenuTone() {
-    if (settings.sound === 'off') return;
+    if (Prefs.soundGain(settings) === 0) return;
     const Context = window.AudioContext || window.webkitAudioContext;
     if (!Context) return; // Unsupported audio is silent, never a startup blocker.
     try {
@@ -320,7 +330,37 @@
     render(game);
   }
 
+  function requestSetup() {
+    if (!game || game.phase === 'DEAD' || game.phase === 'WIN') { showSetup(); return; }
+    resetFocus = document.activeElement instanceof HTMLElement ? document.activeElement : boardEl;
+    resetDuringTell = game.phase === 'TELL';
+    currentModal = 'reset-confirm';
+    showModal('HOUSE // LEAVE THIS LOOP', 'Leave this loop?',
+      'Returning to setup discards this run, including health, rooms and modifiers. Appearance and accessibility settings stay saved.',
+      'DISCARD RUN / OPEN SETUP', showSetup);
+    const cancel = $('#modal-secondary');
+    cancel.textContent = 'KEEP PLAYING';
+    cancel.hidden = false;
+    cancel.onclick = cancelReset;
+  }
+
+  function cancelReset() {
+    const replayTell = resetDuringTell;
+    resetDuringTell = false;
+    hideModal(resetFocus);
+    resetFocus = null;
+    // A dialog can cover a short warning. Replay this turn's same deterministic
+    // footprint after cancellation: no combat rule, HP or turn counter changes.
+    if (game && replayTell && ['TELL', 'MOVE'].includes(game.phase)) {
+      if (game.pendingTimer != null) game.clearTimer(game.pendingTimer);
+      game.pendingTimer = null;
+      game.announceTell();
+    }
+  }
+
   function showSetup() {
+    resetFocus = null;
+    resetDuringTell = false;
     if (game) {
       game.dispose(); // Cancel any pending tell timer before leaving combat.
       game = null;
@@ -381,17 +421,22 @@
   $('#hold-btn').addEventListener('click', () => game?.hold());
   $('#comfort-btn').addEventListener('click', () => game?.comfort());
   $('#freeze-btn').addEventListener('click', () => game?.freeze());
-  $('#setup-btn').addEventListener('click', showSetup);
+  $('#setup-btn').addEventListener('click', requestSetup);
   $('#setup-options').addEventListener('submit', e => e.preventDefault());
   $('#setup-options').addEventListener('change', commitSetup);
   $('#sound-test').addEventListener('click', playMenuTone);
 
   document.addEventListener('keydown', event => {
     if (!$('#modal').hidden) {
+      if (event.key === 'Escape' && currentModal === 'reset-confirm') {
+        event.preventDefault();
+        cancelReset();
+        return;
+      }
       if (event.key === 'Tab') {
         const focusable = [...$('#modal').querySelectorAll(
-          'input:not([disabled]), select:not([disabled]), button:not([disabled]):not([hidden])'
-        )].filter(element => element.getClientRects().length > 0);
+          'input:not([disabled]), select:not([disabled]), button:not([disabled]):not([hidden]), summary, a[href]'
+        )].filter(element => !element.closest('[hidden]') && element.getClientRects().length > 0);
         if (!focusable.length) { event.preventDefault(); return; }
         const first = focusable[0], last = focusable[focusable.length - 1];
         if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
@@ -406,6 +451,7 @@
       event.preventDefault();
       return;
     }
+    if (event.key === 'Escape') { event.preventDefault(); requestSetup(); return; }
     if (!game || event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) return;
     const delta = keyDirections[event.key];
     if (delta) {
@@ -430,7 +476,7 @@
     if (event.key === '3') game.selectAttack('Burst');
     if (event.key.toLowerCase() === 'e') game.comfort();
     if (event.key.toLowerCase() === 'f') game.freeze();
-    if (event.key.toLowerCase() === 'r') showSetup();
+    if (event.key.toLowerCase() === 'r') { event.preventDefault(); requestSetup(); }
   });
 
   hydrateSetup();
