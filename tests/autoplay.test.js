@@ -55,3 +55,5 @@ for(let r=0;r<3;r++) for(let turn=0;turn<4;turn++) {
   }
 }
 console.log('PASS: 60 deterministic three-room victories and exhaustive base attack safety checks.');
+// CI already invokes autoplay.test.js; include the extended Release A fairness suite.
+require('./encounter_fairness.test.js');
