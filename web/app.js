@@ -69,7 +69,7 @@
     $('#phase-pill').textContent = phaseText[s.phase] || 'UNKNOWN';
     $('#choice-step').textContent = s.phase === 'MOVE' ? 'MOVE → ATTACK' : s.phase === 'ATTACK' ? 'AIM → STRIKE' : s.phase === 'TELL' ? 'WATCH → REMEMBER' : '•••';
     $('#instruction').textContent = s.phase === 'TELL' ? `Watch the flash for ${s.tellDuration.toFixed(2)} seconds. Then remember where it was.`
-      : s.phase === 'MOVE' ? (s.skipMove || s.slowed ? 'Movement unavailable this turn. Use HOLD.' : 'Choose one neighboring tile, or hold position. Recall the vanished danger tiles.')
+      : s.phase === 'MOVE' ? (s.skipMove || s.slowed ? 'Movement unavailable this turn. Use HOLD.' : ('Choose one neighboring tile, or hold position. ' + (s.persistTells ? 'Amber outlines show the next strike.' : 'Recall the vanished danger tiles.')))
       : s.phase === 'ATTACK' ? 'Choose an attack shape, then click a valid target. Your attack leaves a 2-turn tile effect.'
       : s.phase === 'REWARD' ? 'A choice between rooms. Each modifier helps and harms.'
       : s.phase === 'WIN' ? 'The phone falls silent. You survived the three-room demonstration.'
